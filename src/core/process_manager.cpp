@@ -1,6 +1,5 @@
 #include "process_manager.h"
-#include <algorithm>
-#include <cerrno>
+#include <format>
 #include <sys/_types/_pid_t.h>
 #include <sys/_types/_s_ifmt.h>
 #include <sys/stat.h>
@@ -10,45 +9,39 @@
 namespace core
 {
 
-ExecutableError m_validate_executable(const std::string &name)
+base::ErrorOr<void>
+ProcessManager::m_validate_executable(const std::string &name)
 {
   if (name.empty())
-    return ExecutableError::InvalidPath;
+    return base::Error::from_string("executable name cannot be empty");
 
   struct stat sb;
   if (stat(name.c_str(), &sb) == -1)
-    switch (errno)
-    {
-    case ENOENT:
-      return ExecutableError::NotFound;
-
-    case EACCES:
-      return ExecutableError::NoPermissions;
-    default:
-      return ExecutableError::SystemError;
-    }
+    return base::Error::from_errno(
+        format("error getting stats about: {}", name));
 
   // has execute
   if (!(sb.st_mode & S_IXUSR))
-    return ExecutableError::NotExecutable;
-
+    return base::Error::from_string("no execute permissions");
   // is regular file
   if (!(sb.st_mode & S_IFREG))
-    return ExecutableError::NotExecutable;
+    return base::Error::from_string("is not a regular file");
 
-  return ExecutableError::None;
+  return {};
 }
 
-ExecutableError ProcessManager::run(const std::string &name,
-                                    const std::string &executable,
-                                    std::vector<std::string> args)
+base::ErrorOr<void> ProcessManager::run(const std::string &name,
+                                        const std::string &executable,
+                                        std::vector<std::string> args)
 {
+  if (auto validate = m_validate_executable(executable); validate.is_error())
+    return validate;
 
   pid_t id = fork();
 
   // need to think about how to properly error out
   if (id == -1)
-    return ExecutableError::SystemError;
+    return base::Error::from_errno("error forking");
 
   if (id == 0)
   {
@@ -62,14 +55,14 @@ ExecutableError ProcessManager::run(const std::string &name,
     c_args.push_back(nullptr);
 
     execvp(executable.c_str(), c_args.data());
-    return ExecutableError::SystemError;
+    return base::Error::from_errno("error execvp");
   }
 
   Process p(name, executable, id, Process::ProcessState::Active, args);
 
   m_processes[id] = p;
 
-  return ExecutableError::None;
+  return {};
 }
 
 bool ProcessManager::is_running(const std::string &name)

@@ -1,5 +1,6 @@
 #pragma once
-#include "errors.h"
+
+#include "base/error.h"
 #include <map>
 #include <sys/_types/_pid_t.h>
 #include <vector>
@@ -40,7 +41,7 @@ private:
   //  perhaps we need something to manage all the processes internally
   // this will store all processes
   std::map<pid_t, Process> m_processes;
-  ExecutableError m_validate_executable(const std::string &name);
+  base::ErrorOr<void> m_validate_executable(const std::string &name);
 
 public:
   ProcessManager() {};
@@ -58,8 +59,8 @@ public:
 
   // maybe run should return something
   // run is returning a boolean
-  ExecutableError run(const std::string &name, const std::string &path,
-                      std::vector<std::string> args = {});
+  base::ErrorOr<void> run(const std::string &name, const std::string &path,
+                          std::vector<std::string> args = {});
   bool is_running(const std::string &name);
   void stop(pid_t process_id);
 };
