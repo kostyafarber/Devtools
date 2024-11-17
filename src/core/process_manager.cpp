@@ -9,6 +9,20 @@
 namespace core
 {
 
+base::ErrorOr<void> Process::trigger_playing()
+{
+  if (m_state == ProcessState::Error || m_state == ProcessState::Terminated)
+    return base::Error::from_string(
+        "can only start playing from an active state");
+
+  if (m_state != ProcessState::Active)
+    return base::Error::from_errno(
+        "can only start playing from an active state");
+
+  m_state = ProcessState::Playing;
+  return {};
+}
+
 base::ErrorOr<void>
 ProcessManager::m_validate_executable(const std::string &name)
 {
@@ -64,6 +78,8 @@ base::ErrorOr<void> ProcessManager::run(const std::string &name,
 
   return {};
 }
+
+
 
 bool ProcessManager::is_running(const std::string &name)
 {

@@ -7,6 +7,11 @@
 
 namespace core
 {
+
+enum class ProcessType
+{
+  AudioProcess,
+};
 // at the end of the day the process does something, how does it do it?
 struct Process
 {
@@ -21,9 +26,12 @@ struct Process
   {
     Active,
     Terminated,
-    Error
+    Error,
+    Playing // audio-specific state
   };
   ProcessState m_state;
+
+  base::ErrorOr<void> trigger_playing();
 
   Process() = default;
   Process(std::string name, std::string executable, pid_t process_id,
@@ -33,6 +41,8 @@ struct Process
   {
     time(&m_timestamp);
   };
+
+  bool is_playing() const { return m_state == ProcessState::Playing; }
 };
 
 class ProcessManager

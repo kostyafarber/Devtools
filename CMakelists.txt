@@ -6,8 +6,21 @@ set(CMAKE_CXX_STANDARD 20)
 set(EXPORT_COMPILE_COMMANDS ON)
 
 add_library(core_lib
+  ${CMAKE_SOURCE_DIR}/src/ru/ring_buffer.cpp
   ${CMAKE_SOURCE_DIR}/src/core/process_manager.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
 )
+
+find_library(COREAUDIO CoreAudio)
+find_library(AUDIOUNIT AudioUnit)
+find_library(AUDIOTOOLBOX AudioToolbox) # Add this line
+
+target_link_libraries(core_lib PUBLIC
+  ${COREAUDIO}
+  ${AUDIOUNIT}
+  ${AUDIOTOOLBOX}
+)
+
 target_include_directories(core_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 add_executable(Devtools main.cpp)
@@ -23,7 +36,8 @@ FetchContent_MakeAvailable(googletest)
 
 # Add test executable
 add_executable(unit_tests
-  tests/core/process_manager.cpp
+  tests/core/process_manager_test.cpp
+  tests/core/audio_test.cpp
 )
 target_link_libraries(unit_tests PRIVATE
   core_lib
@@ -32,3 +46,4 @@ target_link_libraries(unit_tests PRIVATE
 
 # Enable testing
 enable_testing()
+add_test(NAME unit_tests COMMAND unit_tests)
