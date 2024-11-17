@@ -1,9 +1,10 @@
 #include "base/error.h"
+#include "synthesiser.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
+#include <memory>
 
-namespace core
-{
+namespace core {
 
 static OSStatus audio_callback(void *inRefCon,
                                AudioUnitRenderActionFlags *ioActionFlags,
@@ -15,8 +16,11 @@ class AudioProcess
 {
 public:
   std::string m_name;
+  std::unique_ptr<core::Synthesiser> m_synth;
 
-  AudioProcess(const std::string &name) : m_name(name) {};
+  AudioProcess(const std::string &name)
+      : m_name(name),
+        m_synth(std::make_unique<Synthesiser>(Synthesiser(44100, 440))) {};
   ~AudioProcess() = default;
 
   AudioProcess(const AudioProcess &) = delete;

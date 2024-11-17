@@ -46,6 +46,8 @@ public:
   ErrorOr(R value) : m_value(std::move(value)) {};
   ErrorOr(E value) : m_value(std::move(value)) {};
   bool is_error() { return std::holds_alternative<E>(m_value); }
+
+  R value() { return std::get<R>(m_value); }
 };
 
 template <typename E>
