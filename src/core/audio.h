@@ -20,7 +20,7 @@ public:
 
   AudioProcess(const std::string &name)
       : m_name(name),
-        m_synth(std::make_unique<Synthesiser>(Synthesiser(44100, 440))) {};
+        m_synth(std::make_unique<Synthesiser>(Synthesiser(44100, 440, 0.5))) {};
   ~AudioProcess() = default;
 
   AudioProcess(const AudioProcess &) = delete;

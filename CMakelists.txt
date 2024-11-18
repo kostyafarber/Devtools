@@ -38,6 +38,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(unit_tests
   tests/core/process_manager_test.cpp
   tests/core/audio_test.cpp
+  tests/core/synthesiser_test.cpp
   tests/ru/ring_buffer_test.cpp
 )
 target_link_libraries(unit_tests PRIVATE

@@ -9,6 +9,4 @@ TEST(AudioProcess, Initalise)
 
   auto result = a.initialise().is_error();
   ASSERT_FALSE(result);
-
-  sleep(2);
-  }
+}

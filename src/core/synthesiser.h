@@ -1,4 +1,5 @@
 
+#include "ru/clamped.h"
 namespace core {
 class Synthesiser
 {
@@ -14,16 +15,20 @@ class Synthesiser
   float m_phase_increment; // how much to advance phase per sample (was m_cycle)
   float m_volume{1.0f};    // amplitude (controls volume)
 
-public:
-  Synthesiser(int sample_rate, int frequency)
-      : m_sample_rate(sample_rate), m_frequency(frequency),
-        m_phase_increment(m_sample_rate / m_frequency) {};
+  Clamped<float> m_clamper;
 
-  bool increase_volume();
-  bool decrease_volume();
+public:
+  Synthesiser(int sample_rate, int frequency, float duty_cycle)
+      : m_sample_rate(sample_rate), m_frequency(frequency),
+        m_duty_cycle(duty_cycle),
+        m_phase_increment(m_frequency / m_sample_rate),
+        m_clamper(0.0f, 1.0f) {};
+
+  void increase_volume(float increase) noexcept;
+  void decrease_volume(float decrease) noexcept;
   float generate() noexcept;
 
-  void set_frequency(float frequency);
-  void set_duty_cycle(float duty_cycle);
+  void set_frequency(float frequency) noexcept;
+  void set_duty_cycle(float duty_cycle) noexcept;
 };
 } // namespace core
