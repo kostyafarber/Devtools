@@ -10,7 +10,7 @@ class Queue
   const Queue &operator=(const Queue &) = delete;
 
   // want to delete copy
-  // not sure when we'd ever wantto move this thing?
+  // not sure when we'd ever want to move this thing?
 
   void try_send(Message m) noexcept;
   void try_receive(Message &m) noexcept;
