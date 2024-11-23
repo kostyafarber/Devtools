@@ -7,7 +7,18 @@ fi
 
 mkdir -p build
 cd build
-cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. --fresh
+
+# Default debug audio to OFF
+debug_audio="OFF"
+
+# Check for --debug-audio flag
+for arg in "$@"; do
+    if [ "$arg" == "--debug-audio" ]; then
+        debug_audio="ON"
+    fi
+done
+
+cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_AUDIO_DEBUG=${debug_audio} .. --fresh
 
 ninja
 

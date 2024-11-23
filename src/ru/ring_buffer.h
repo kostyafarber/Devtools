@@ -12,12 +12,15 @@ class RingBuffer
 {
 public:
   RingBuffer() = default;
-  RingBuffer(size_t size) : m_size(size), m_samples(size) {};
+  RingBuffer(size_t size) : m_size(size), m_samples(size){};
   ~RingBuffer() = default;
 
   // delete copy constructors
-  RingBuffer(RingBuffer &) = delete;
-  RingBuffer &operator=(RingBuffer &) = delete;
+  RingBuffer(const RingBuffer &) = delete;
+  const RingBuffer &operator=(const RingBuffer &) = delete;
+
+  RingBuffer(RingBuffer &&) = default;
+  RingBuffer &operator=(RingBuffer &&) = default;
 
   bool read(T *, size_t n = 1) noexcept;
   bool write(T *, size_t n = 1) noexcept;
