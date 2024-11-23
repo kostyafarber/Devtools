@@ -24,14 +24,17 @@ public:
   AudioProcess(const std::string &name, AudioConfig audio_config)
       : m_name(name), m_audio_config(audio_config),
         m_buffer(audio_config.buffer_size * 2),
-        m_temp_buffer(audio_config.buffer_size){};
-  ~AudioProcess() = default;
+        m_temp_buffer(audio_config.buffer_size),
+        m_synth(std::make_unique<core::Synthesiser>(core::Synthesiser(
+            audio_config.sampling_rate, audio_config.frequency, 0.5))) {};
+  ~AudioProcess()
+  {
+    if (m_playing)
+      stop();
+  }
 
   AudioProcess(const AudioProcess &) = delete;
   const AudioProcess &operator=(const AudioProcess &) = delete;
-
-  AudioProcess(AudioProcess &&) = default;
-  AudioProcess &operator=(AudioProcess &&) = default;
 
   float get_fill_percentage() const;
   u_int32_t get_underrun_count() const;
@@ -40,6 +43,9 @@ public:
   base::ErrorOr<void> play();
   base::ErrorOr<void> pause() { return {}; };
   base::ErrorOr<void> stop();
+
+  void increase_volume(float increase) { m_synth->increase_volume(increase); }
+  void decrease_volume(float decrease) { m_synth->decrease_volume(decrease); }
 
   base::ErrorOr<void> initialise();
   base::ErrorOr<void> shutdown();

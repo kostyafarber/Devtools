@@ -23,7 +23,7 @@ cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_AUDIO_DEBUG=${debug_a
 ninja
 
 # Run tests if requested or if no specific target
-if [ "$1" = "test" ] || [ -z "$1" ]; then
+if [ "$1" = "test" ]; then
     # Run tests with color output and show detailed results
     GTEST_COLOR=1 ctest --output-on-failure --verbose
 fi

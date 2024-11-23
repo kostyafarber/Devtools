@@ -133,7 +133,7 @@ void AudioProcess::write_samples() noexcept
   }
 }
 
-float AudioProcess::get_fill_percentage() const {return 0.0f;}
+float AudioProcess::get_fill_percentage() const { return 0.0f; }
 
 } // namespace core
 // Add this callback function declaration before initialise()

@@ -1,5 +1,6 @@
 
 #include "ru/clamped.h"
+#include <cstdint>
 namespace core {
 class Synthesiser
 {
@@ -9,10 +10,11 @@ class Synthesiser
   };
 
 public:
-  Synthesiser(int sample_rate, int frequency, float duty_cycle)
+  Synthesiser(uint32_t sample_rate, uint32_t frequency, float duty_cycle)
       : m_sample_rate(sample_rate), m_frequency(frequency),
         m_duty_cycle(duty_cycle),
-        m_phase_increment(m_frequency / m_sample_rate), m_clamper(0.0f, 1.0f){};
+        m_phase_increment(m_frequency / m_sample_rate),
+        m_clamper(0.0f, 1.0f) {};
   ~Synthesiser() = default;
 
   Synthesiser(const Synthesiser &) = delete;

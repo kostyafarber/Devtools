@@ -13,12 +13,12 @@ void core::Synthesiser::set_duty_cycle(float duty_cycle) noexcept
 
 void core::Synthesiser::increase_volume(float increase) noexcept
 {
-  m_volume = m_clamper.value(increase);
+  m_volume = m_clamper.value(m_volume + increase);
 }
 
-void core::Synthesiser::decrease_volume(float increase) noexcept
+void core::Synthesiser::decrease_volume(float decrease) noexcept
 {
-  m_volume = m_clamper.value(increase);
+  m_volume = m_clamper.value(m_volume - decrease);
 }
 
 float core::Synthesiser::generate() noexcept
