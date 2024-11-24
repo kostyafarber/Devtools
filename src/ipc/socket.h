@@ -30,6 +30,8 @@ public:
   bool try_send(const SynthMessage &message) noexcept;
   bool try_recv(SynthMessage &message) noexcept;
 
+  int fd() const { return m_socket_fd; }
+
   base::ErrorOr<void> connect();
   base::ErrorOr<void> listen();
   base::ErrorOr<UnixSocket> accept();
