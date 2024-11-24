@@ -47,8 +47,6 @@ TEST_F(AudioProccessTest, Stop)
   auto maybe_play = a.play();
   ASSERT_FALSE(maybe_play.is_error());
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
   auto maybe_stop = a.stop();
   ASSERT_FALSE(maybe_stop.is_error());
 }

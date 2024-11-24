@@ -3,8 +3,7 @@
 
 namespace ipc {
 
-class SynthMessage
-{
+struct SynthMessage {
   SynthCommand m_message;
 
   union PayloadData {

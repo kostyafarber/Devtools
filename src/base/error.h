@@ -3,8 +3,7 @@
 #include <string>
 #include <variant>
 
-namespace base
-{
+namespace base {
 class Error
 {
 public:
@@ -26,13 +25,14 @@ public:
     return Error(context + ":" + sys_error);
   };
 
+  std::string message() { return m_message; }
+
 private:
   std::string m_message;
 
   explicit Error(std::string msg) : m_message(msg) {};
 };
-struct Empty
-{
+struct Empty {
 };
 
 template <typename R, typename E = Error>
@@ -47,7 +47,8 @@ public:
   ErrorOr(E value) : m_value(std::move(value)) {};
   bool is_error() { return std::holds_alternative<E>(m_value); }
 
-  R value() { return std::get<R>(m_value); }
+  R &value() { return std::get<R>(m_value); }
+  E &error() { return std::get<E>(m_value); }
 };
 
 template <typename E>
