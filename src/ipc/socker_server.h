@@ -1,6 +1,6 @@
+#include "base/logging.h"
 #include "ipc/socket.h"
 #include <sys/event.h>
-#include <thread>
 
 class SocketServer
 {

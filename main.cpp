@@ -19,5 +19,5 @@ int main()
   if (auto maybe_play = audio.play(); maybe_play.is_error())
     std::cout << "error playing" << std::endl;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }

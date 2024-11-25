@@ -16,11 +16,12 @@ add_library(core_lib
   ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
   ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket.cpp
+  ${CMAKE_SOURCE_DIR}/src/base/logging.cpp
 )
 
 find_library(COREAUDIO CoreAudio)
 find_library(AUDIOUNIT AudioUnit)
-find_library(AUDIOTOOLBOX AudioToolbox) # Add this line
+find_library(AUDIOTOOLBOX AudioToolbox)
 
 target_link_libraries(core_lib PUBLIC
   ${COREAUDIO}

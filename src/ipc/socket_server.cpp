@@ -16,7 +16,7 @@ base::ErrorOr<SocketServer> SocketServer::create(const std::string &socket_path)
   auto socket = std::move(maybe_socket.value());
 
   if (auto err = socket.listen(); err.is_error()) {
-    close(m_kqueue_fd);
+    close(queue_fd);
     return err.error();
   }
 
@@ -41,4 +41,19 @@ base::ErrorOr<void> SocketServer::register_socket_event(int fd,
   return {};
 }
 
+void SocketServer::handle_events() noexcept
+{
+  const int MAX_EVENTS = 32;
+  struct kevent events[MAX_EVENTS];
 
+  m_running = true;
+
+  while (m_running) {
+    int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, nullptr);
+
+    if (n == -1) {
+      // LOG_AUDIO(Error, "kevent error in handle_events");
+      continue;
+    }
+  }
+}
