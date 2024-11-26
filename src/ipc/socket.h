@@ -1,3 +1,5 @@
+#pragma once
+
 #include "base/error.h"
 #include "ipc/messages/synth_message.h"
 #include <unistd.h>
@@ -38,7 +40,7 @@ public:
 
 private:
   std::string m_path;
-  UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path) {};
+  UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path){};
   int m_socket_fd{-1};
 
   bool m_running{false};

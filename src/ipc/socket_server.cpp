@@ -1,5 +1,21 @@
-#include "ipc/socker_server.h"
+#include "ipc/socket_server.h"
 #include <sys/event.h>
+
+namespace ipc {
+SocketServer &SocketServer::operator=(SocketServer &&other) noexcept
+{
+  if (this == &other)
+    return *this;
+
+  m_kqueue_fd = other.m_kqueue_fd;
+  m_listening_socket = std::move(m_listening_socket);
+  m_running = other.m_running;
+
+  other.m_kqueue_fd = -1;
+  other.m_running = false;
+
+  return *this;
+}
 
 base::ErrorOr<SocketServer> SocketServer::create(const std::string &socket_path)
 {
@@ -22,7 +38,8 @@ base::ErrorOr<SocketServer> SocketServer::create(const std::string &socket_path)
 
   SocketServer server(queue_fd, std::move(socket));
 
-  if (auto err = register_socket_event(server.m_listening_socket.fd(), true);
+  if (auto err =
+          server.register_socket_event(server.m_listening_socket.fd(), true);
       err.is_error())
     return err.error();
 
@@ -52,8 +69,55 @@ void SocketServer::handle_events() noexcept
     int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, nullptr);
 
     if (n == -1) {
-      // LOG_AUDIO(Error, "kevent error in handle_events");
+      LOG_AUDIO(Error, "kevent error in handle_events");
       continue;
+    }
+
+    for (int i = 0; i < n; i++) {
+      if (events[i].ident == m_listening_socket.fd()) {
+        if (events[i].flags & EV_EOF) {
+          LOG_AUDIO(Error, "EOF on listening socket");
+          m_running = false;
+          break;
+        }
+
+        if (events[i].flags & EV_ERROR) {
+          LOG_AUDIO(Error, "Error on listening socket");
+          m_running = false;
+          break;
+        }
+
+        auto maybe_client = m_listening_socket.accept();
+        if (maybe_client.is_error()) {
+          LOG_AUDIO(Error, "Error accepting client");
+          continue;
+        }
+
+        auto client = std::move(maybe_client.value());
+        if (auto err = register_socket_event(client.fd(), true);
+            err.is_error()) {
+          LOG_AUDIO(Error, "Error registering client event");
+          continue;
+        }
+
+        m_clients.emplace(client.fd(), std::move(client));
+      } else {
+        auto client = m_clients.find(events[i].ident);
+        if (client == m_clients.end()) {
+          LOG_AUDIO(Error, "Client not found");
+          continue;
+        }
+
+        ipc::SynthMessage msg;
+        if (!client->second.try_recv(msg)) {
+          LOG_AUDIO(Error, "Error receiving message");
+          continue;
+        }
+
+        m_command_queue.write(&msg);
+      }
     }
   }
 }
+
+} // namespace ipc

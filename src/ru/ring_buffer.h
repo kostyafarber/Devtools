@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "base/error.h"
 #include <algorithm>
 #include <atomic>

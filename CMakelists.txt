@@ -16,6 +16,7 @@ add_library(core_lib
   ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
   ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket.cpp
+  ${CMAKE_SOURCE_DIR}/src/ipc/socket_server.cpp
   ${CMAKE_SOURCE_DIR}/src/base/logging.cpp
 )
 
@@ -49,6 +50,7 @@ add_executable(unit_tests
   tests/core/synthesiser_test.cpp
   tests/ru/ring_buffer_test.cpp
   tests/ipc/socket_test.cpp
+  tests/ipc/socket_server_test.cpp
 )
 target_link_libraries(unit_tests PRIVATE
   core_lib
