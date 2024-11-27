@@ -1,3 +1,5 @@
+#pragma once
+
 #include "synth_command.h"
 #include <cstdint>
 

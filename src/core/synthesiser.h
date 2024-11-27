@@ -31,12 +31,12 @@ public:
   void set_duty_cycle(float duty_cycle) noexcept;
 
 private:
-  float m_frequency;
-  float m_sample_rate;     // samples per second
-  float m_duty_cycle;      // ratio of high (1) to low (-1)
-  float m_phase{0};        // current position in wave cycle
+  std::atomic<float> m_frequency;
+  float m_sample_rate;             // samples per second
+  std::atomic<float> m_duty_cycle; // ratio of high (1) to low (-1)
+  float m_phase{0};                // current position in wave cycle
   float m_phase_increment; // how much to advance phase per sample (was m_cycle)
-  float m_volume{1.0f};    // amplitude (controls volume)
+  std::atomic<float> m_volume{1.0f}; // amplitude (controls volume)
 
   Clamped<float> m_clamper;
 };

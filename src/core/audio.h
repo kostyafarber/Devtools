@@ -1,3 +1,5 @@
+#include "ipc/messages/synth_message.h"
+#include "ipc/socket_server.h"
 #include "ru/ring_buffer.h"
 #include "synthesiser.h"
 #include <AudioToolbox/AudioToolbox.h>
@@ -13,6 +15,7 @@ struct AudioConfig {
   u_int32_t frequency;
   u_int32_t sampling_rate;
   u_int32_t buffer_size = 1024;
+  static constexpr u_int32_t command_buffer_size = 128;
 };
 
 class AudioProcess
@@ -23,10 +26,11 @@ public:
 
   AudioProcess(const std::string &name, AudioConfig audio_config)
       : m_name(name), m_audio_config(audio_config),
-        m_buffer(audio_config.buffer_size * 2),
+        m_callback_buffer(audio_config.buffer_size * 2),
+        m_command_buffer(audio_config.command_buffer_size),
         m_temp_buffer(audio_config.buffer_size),
-        m_synth(std::make_unique<core::Synthesiser>(core::Synthesiser(
-            audio_config.sampling_rate, audio_config.frequency, 0.5))) {};
+        m_synth(std::make_unique<core::Synthesiser>(
+            audio_config.sampling_rate, audio_config.frequency, 0.5)) {};
   ~AudioProcess()
   {
     if (m_playing)
@@ -60,16 +64,23 @@ private:
   AudioConfig m_audio_config;
 
   bool m_initialised{false};
-  bool m_playing{false};
+
+  std::atomic<bool> m_playing{false};
+  std::atomic<bool> m_listening_for_commands{false};
+
   void write_samples() noexcept;
+  void process_commands(const ipc::SynthMessage &message) noexcept;
 
   AudioUnit m_audio_unit{};
   AudioComponentInstance m_component{};
 
-  ru::RingBuffer<float> m_buffer{};
+  ru::RingBuffer<float> m_callback_buffer{};
   std::vector<float> m_temp_buffer{};
 
-  std::thread m_writer_thread;
+  ru::RingBuffer<ipc::SynthMessage> m_command_buffer{};
+  std::optional<ipc::SocketServer> m_socket_server;
+
+  std::thread m_callback_thread;
 
   friend OSStatus audio_callback(void *inRefCon,
                                  AudioUnitRenderActionFlags *ioActionFlags,
