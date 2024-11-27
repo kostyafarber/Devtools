@@ -1,4 +1,6 @@
 #include "ipc/socket_server.h"
+#include "ru/ring_buffer.h"
+#include <atomic>
 #include <sys/event.h>
 
 namespace ipc {
@@ -9,7 +11,7 @@ SocketServer &SocketServer::operator=(SocketServer &&other) noexcept
 
   m_kqueue_fd = other.m_kqueue_fd;
   m_listening_socket = std::move(m_listening_socket);
-  m_running = other.m_running;
+  m_running.store(other.m_running, std::memory_order_release);
 
   other.m_kqueue_fd = -1;
   other.m_running = false;
@@ -17,7 +19,9 @@ SocketServer &SocketServer::operator=(SocketServer &&other) noexcept
   return *this;
 }
 
-base::ErrorOr<SocketServer> SocketServer::create(const std::string &socket_path)
+base::ErrorOr<SocketServer>
+SocketServer::create(const std::string &socket_path,
+                     ru::RingBuffer<SynthMessage> &command_queue)
 {
   auto queue_fd = kqueue();
   if (queue_fd == -1)
@@ -36,7 +40,7 @@ base::ErrorOr<SocketServer> SocketServer::create(const std::string &socket_path)
     return err.error();
   }
 
-  SocketServer server(queue_fd, std::move(socket));
+  SocketServer server(queue_fd, std::move(socket), command_queue);
 
   if (auto err =
           server.register_socket_event(server.m_listening_socket.fd(), true);
@@ -50,7 +54,7 @@ base::ErrorOr<void> SocketServer::register_socket_event(int fd,
                                                         bool is_read) noexcept
 {
   struct kevent event;
-  EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, nullptr);
+  EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_EOF, 0, 0, nullptr);
 
   if (kevent(m_kqueue_fd, &event, 1, nullptr, 0, nullptr) == -1)
     return base::Error::from_errno("failed to register the event");
@@ -63,30 +67,36 @@ void SocketServer::handle_events() noexcept
   const int MAX_EVENTS = 32;
   struct kevent events[MAX_EVENTS];
 
-  m_running = true;
+  struct timespec timeout{
+      .tv_sec = 0,
+      .tv_nsec = 100000000 // 100ms timeout
+  };
 
-  while (m_running) {
-    int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, nullptr);
+  while (auto running = m_running.load(std::memory_order_acquire)) {
+    LOG_AUDIO(Info, "Starting event loop");
+    int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, &timeout);
 
     if (n == -1) {
       LOG_AUDIO(Error, "kevent error in handle_events");
       continue;
     }
 
+    LOG_AUDIO(Info, "processing {} events", n);
     for (int i = 0; i < n; i++) {
       if (events[i].ident == m_listening_socket.fd()) {
         if (events[i].flags & EV_EOF) {
           LOG_AUDIO(Error, "EOF on listening socket");
-          m_running = false;
+          stop();
           break;
         }
 
         if (events[i].flags & EV_ERROR) {
           LOG_AUDIO(Error, "Error on listening socket");
-          m_running = false;
+          stop();
           break;
         }
 
+        LOG_AUDIO(Info, "accepting client");
         auto maybe_client = m_listening_socket.accept();
         if (maybe_client.is_error()) {
           LOG_AUDIO(Error, "Error accepting client");
@@ -94,6 +104,8 @@ void SocketServer::handle_events() noexcept
         }
 
         auto client = std::move(maybe_client.value());
+
+        LOG_AUDIO(Info, "registering socket event with fd: {}", client.fd());
         if (auto err = register_socket_event(client.fd(), true);
             err.is_error()) {
           LOG_AUDIO(Error, "Error registering client event");
@@ -104,7 +116,7 @@ void SocketServer::handle_events() noexcept
       } else {
         auto client = m_clients.find(events[i].ident);
         if (client == m_clients.end()) {
-          LOG_AUDIO(Error, "Client not found");
+          LOG_AUDIO(Warn, "Client not found");
           continue;
         }
 
@@ -114,10 +126,31 @@ void SocketServer::handle_events() noexcept
           continue;
         }
 
-        m_command_queue.write(&msg);
+        LOG_AUDIO(Info, "received message");
+        if (!m_command_queue.write(&msg))
+          LOG_AUDIO(Warn, "error writing message");
       }
     }
   }
+}
+
+void SocketServer::start() noexcept
+{
+  LOG_AUDIO(Info, "Starting socket server");
+  if (m_running)
+    return;
+
+  m_running.store(true, std::memory_order_release);
+  m_event_thread = std::thread([this]() { handle_events(); });
+}
+
+void SocketServer::stop() noexcept
+{
+  m_running.store(false, std::memory_order_release);
+
+  LOG_AUDIO(Info, "attempting to join thread");
+  if (m_event_thread.joinable())
+    m_event_thread.join();
 }
 
 } // namespace ipc

@@ -17,7 +17,6 @@ add_library(core_lib
   ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket_server.cpp
-  ${CMAKE_SOURCE_DIR}/src/base/logging.cpp
 )
 
 find_library(COREAUDIO CoreAudio)
