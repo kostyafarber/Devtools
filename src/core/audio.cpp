@@ -1,5 +1,6 @@
 #include "audio.h"
 #include "base/error.h"
+#include "ipc/constants.h"
 #include "ipc/messages/synth_message.h"
 #include "ipc/socket_server.h"
 #include <AudioToolbox/AudioToolbox.h>
@@ -37,11 +38,13 @@ base::ErrorOr<void> AudioProcess::initialise()
   desc.componentSubType = kAudioUnitSubType_DefaultOutput;
   desc.componentManufacturer = kAudioUnitManufacturer_Apple;
 
+  LOG_AUDIO(Info, "finding component");
   AudioComponent component = AudioComponentFindNext(nullptr, &desc);
 
   if (!component)
     return base::Error::from_string("error finding audio component");
 
+  LOG_AUDIO(Info, "finding instance");
   OSStatus status = AudioComponentInstanceNew(component, &m_audio_unit);
   if (status != noErr)
     return base::Error::from_string("error creating audio component instance");
@@ -57,6 +60,7 @@ base::ErrorOr<void> AudioProcess::initialise()
   format.mBytesPerFrame = sizeof(Float32);
   format.mBytesPerPacket = sizeof(Float32);
 
+  LOG_AUDIO(Info, "setting properties");
   status =
       AudioUnitSetProperty(m_audio_unit, kAudioUnitProperty_StreamFormat,
                            kAudioUnitScope_Input, 0, &format, sizeof(format));
@@ -68,21 +72,24 @@ base::ErrorOr<void> AudioProcess::initialise()
   callback_struct.inputProc = audio_callback;
   callback_struct.inputProcRefCon = this; // Pass our instance
 
+  LOG_AUDIO(Info, "setting callback");
   status = AudioUnitSetProperty(
       m_audio_unit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input,
       0, &callback_struct, sizeof(callback_struct));
 
+  LOG_AUDIO(Info, "initialising unit");
   status = AudioUnitInitialize(m_audio_unit);
   if (status != noErr) {
     return base::Error::from_string("Failed to initialize audio unit");
   }
 
+  LOG_AUDIO(Info, "setting up socket server");
   auto maybe_socket_server =
-      ipc::SocketServer::create("tmp/command.socket", m_command_buffer);
+      ipc::SocketServer::create(ipc::constants::socket_path, m_command_buffer);
   if (maybe_socket_server.is_error())
     return maybe_socket_server.error();
 
-  m_socket_server = std::move(maybe_socket_server.value());
+  m_socket_server.emplace(std::move(maybe_socket_server.value()));
   m_socket_server->start();
 
   m_initialised = true;

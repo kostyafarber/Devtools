@@ -33,8 +33,9 @@ public:
             audio_config.sampling_rate, audio_config.frequency, 0.5)) {};
   ~AudioProcess()
   {
-    if (m_playing)
+    if (m_playing) {
       stop();
+    }
   }
 
   AudioProcess(const AudioProcess &) = delete;

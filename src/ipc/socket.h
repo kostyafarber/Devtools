@@ -33,6 +33,7 @@ public:
   bool try_recv(SynthMessage &message) noexcept;
 
   int fd() const { return m_socket_fd; }
+  std::string socket_path() const { return m_path; }
 
   base::ErrorOr<void> connect();
   base::ErrorOr<void> listen();
@@ -40,7 +41,7 @@ public:
 
 private:
   std::string m_path;
-  UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path){};
+  UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path) {};
   int m_socket_fd{-1};
 
   bool m_running{false};

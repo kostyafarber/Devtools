@@ -77,7 +77,7 @@ void SocketServer::handle_events() noexcept
     int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, &timeout);
 
     if (n == -1) {
-      LOG_AUDIO(Error, "kevent error in handle_events");
+      LOG_AUDIO(Error, "kevent error in handle_events: {}", strerror(errno));
       continue;
     }
 

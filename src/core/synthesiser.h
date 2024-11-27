@@ -25,6 +25,8 @@ public:
 
   void increase_volume(float increase) noexcept;
   void decrease_volume(float decrease) noexcept;
+  float volume() const { return m_volume; }
+
   float generate() noexcept;
 
   void set_frequency(float frequency) noexcept;

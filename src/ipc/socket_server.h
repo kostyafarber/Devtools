@@ -3,6 +3,7 @@
 #include "base/logging.h"
 #include "ipc/socket.h"
 #include "ru/ring_buffer.h"
+#include <atomic>
 #include <map>
 #include <sys/event.h>
 #include <thread>
@@ -17,10 +18,11 @@ public:
 
   ~SocketServer()
   {
+    stop();
     if (m_kqueue_fd >= 0)
       close(m_kqueue_fd);
 
-    stop();
+    std::remove(m_listening_socket.socket_path().c_str());
   }
 
   SocketServer(const SocketServer &) = delete;
