@@ -6,6 +6,6 @@ namespace ipc {
 
 namespace constants {
 
-static constexpr std::string socket_path = "/tmp/socket.server";
+static constexpr const char *socket_path = "/tmp/socket.server";
 }
 } // namespace ipc

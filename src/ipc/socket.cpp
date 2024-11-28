@@ -1,5 +1,7 @@
 #include "socket.h"
+#include "base/logging.h"
 #include <cstring>
+#include <filesystem>
 #include <sys/_types/_ssize_t.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -38,6 +40,9 @@ base::ErrorOr<void> UnixSocket::listen()
   struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
   std::strncpy(addr.sun_path, m_path.c_str(), sizeof(addr.sun_path) - 1);
+
+  if (std::filesystem::exists(m_path))
+    std::filesystem::remove(m_path);
 
   if (bind(m_socket_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
     return base::Error::from_errno("failed to bind socket");
@@ -85,6 +90,12 @@ bool UnixSocket::try_recv(SynthMessage &message) noexcept
 {
   ssize_t bytes_received =
       recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
+
+  if (bytes_received != sizeof(message))
+    LOG_AUDIO(Info,
+              "did not read whole message: bytes bytes_received={} "
+              "sizeof(message)={}",
+              bytes_received, sizeof(message));
 
   return bytes_received == sizeof(message);
 }

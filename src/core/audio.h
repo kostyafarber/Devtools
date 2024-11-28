@@ -4,6 +4,7 @@
 #include "synthesiser.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
+#include <atomic>
 #include <memory>
 #include <sys/_types/_u_int32_t.h>
 #include <thread>
@@ -30,12 +31,16 @@ public:
         m_command_buffer(audio_config.command_buffer_size),
         m_temp_buffer(audio_config.buffer_size),
         m_synth(std::make_unique<core::Synthesiser>(
-            audio_config.sampling_rate, audio_config.frequency, 0.5)) {};
+            audio_config.sampling_rate, audio_config.frequency, 0.5)){};
   ~AudioProcess()
   {
+    m_initialised.store(false, std::memory_order_release);
     if (m_playing) {
       stop();
     }
+
+    if (m_command_thread.joinable())
+      m_command_thread.join();
   }
 
   AudioProcess(const AudioProcess &) = delete;
@@ -64,13 +69,14 @@ private:
 
   AudioConfig m_audio_config;
 
-  bool m_initialised{false};
+  std::atomic<bool> m_initialised{false};
 
   std::atomic<bool> m_playing{false};
   std::atomic<bool> m_listening_for_commands{false};
 
   void write_samples() noexcept;
-  void process_commands(const ipc::SynthMessage &message) noexcept;
+  void process_command(const ipc::SynthMessage &message) noexcept;
+  void read_commands() noexcept;
 
   AudioUnit m_audio_unit{};
   AudioComponentInstance m_component{};
@@ -82,6 +88,7 @@ private:
   std::optional<ipc::SocketServer> m_socket_server;
 
   std::thread m_callback_thread;
+  std::thread m_command_thread;
 
   friend OSStatus audio_callback(void *inRefCon,
                                  AudioUnitRenderActionFlags *ioActionFlags,

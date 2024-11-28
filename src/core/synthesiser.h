@@ -13,15 +13,14 @@ public:
   Synthesiser(uint32_t sample_rate, uint32_t frequency, float duty_cycle)
       : m_sample_rate(sample_rate), m_frequency(frequency),
         m_duty_cycle(duty_cycle),
-        m_phase_increment(m_frequency / m_sample_rate),
-        m_clamper(0.0f, 1.0f) {};
+        m_phase_increment(m_frequency / m_sample_rate), m_clamper(0.0f, 1.0f){};
   ~Synthesiser() = default;
 
   Synthesiser(const Synthesiser &) = delete;
   const Synthesiser &operator=(const Synthesiser &) = delete;
 
-  Synthesiser(Synthesiser &&) = default;
-  Synthesiser &operator=(Synthesiser &&) = default;
+  Synthesiser(Synthesiser &&) = delete;
+  Synthesiser &operator=(Synthesiser &&) = delete;
 
   void increase_volume(float increase) noexcept;
   void decrease_volume(float decrease) noexcept;

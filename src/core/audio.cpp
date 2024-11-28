@@ -8,6 +8,7 @@
 #include <MacTypes.h>
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <thread>
 
 namespace core {
@@ -86,28 +87,43 @@ base::ErrorOr<void> AudioProcess::initialise()
   LOG_AUDIO(Info, "setting up socket server");
   auto maybe_socket_server =
       ipc::SocketServer::create(ipc::constants::socket_path, m_command_buffer);
-  if (maybe_socket_server.is_error())
+  if (maybe_socket_server.is_error()) {
+    LOG_AUDIO(Error, "error setting up socket server: {}",
+              maybe_socket_server.error().message());
     return maybe_socket_server.error();
+  }
 
-  m_socket_server.emplace(std::move(maybe_socket_server.value()));
+  m_socket_server = std::move(maybe_socket_server.value());
   m_socket_server->start();
 
-  m_initialised = true;
+  LOG_AUDIO(Info, "starting command thread");
+  m_listening_for_commands.store(true, std::memory_order_release);
+  m_command_thread = std::thread([this]() { read_commands(); });
+
+  m_initialised.store(true, std::memory_order_release);
+  LOG_AUDIO(Info, "initalised");
 
   return {};
 }
 
 base::ErrorOr<void> AudioProcess::play()
 {
-  if ((!m_initialised))
+  LOG_AUDIO(Info, "checking if initialised");
+  if ((!m_initialised)) {
+    LOG_AUDIO(Error, "not initialised");
     return base::Error::from_string("audio unit not initialised");
+  }
 
+  LOG_AUDIO(Info, "starting the unit");
   auto status = AudioOutputUnitStart(m_audio_unit);
   if (status != noErr) {
+    LOG_AUDIO(Error, "failed to start the unit");
     return base::Error::from_string("Failed to start audio unit");
   }
 
   m_playing.store(true, std::memory_order_release);
+
+  LOG_AUDIO(Info, "starting callback thread");
   m_callback_thread = std::thread([this]() { write_samples(); });
 
   return {};
@@ -130,7 +146,7 @@ base::ErrorOr<void> AudioProcess::stop()
   return {};
 }
 
-void AudioProcess::process_commands(const ipc::SynthMessage &message) noexcept
+void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
 {
   switch (message.m_message) {
   case ipc::SynthCommand::IncreaseVolume:
@@ -162,6 +178,24 @@ void AudioProcess::process_commands(const ipc::SynthMessage &message) noexcept
     LOG_AUDIO(Info, "stopping playback");
     stop();
     break;
+
+  default:
+    break;
+  }
+}
+
+void AudioProcess::read_commands() noexcept
+{
+  LOG_AUDIO(Info, "listening for commands");
+  while (m_initialised.load(std::memory_order_acquire)) {
+    ipc::SynthMessage msg;
+    LOG_AUDIO(Info, "checking for command");
+    if (m_command_buffer.read(&msg, sizeof(msg))) {
+      LOG_AUDIO(Info, "processing command from command buffer");
+      process_command(msg);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
@@ -174,12 +208,6 @@ void AudioProcess::write_samples() noexcept
       std::chrono::milliseconds(static_cast<int>(buffer_duration_ms / 2));
 
   while (m_initialised && m_playing.load(std::memory_order_acquire)) {
-    ipc::SynthMessage msg;
-    if (m_command_buffer.read(&msg, sizeof(msg))) {
-      LOG_AUDIO(Info, "processing command");
-      process_commands(msg);
-    }
-
     for (int i = 0; i < m_audio_config.buffer_size; i++) {
       m_temp_buffer[i] = m_synth->generate();
     }

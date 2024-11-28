@@ -67,9 +67,9 @@ void SocketServer::handle_events() noexcept
   const int MAX_EVENTS = 32;
   struct kevent events[MAX_EVENTS];
 
-  struct timespec timeout{
-      .tv_sec = 0,
-      .tv_nsec = 100000000 // 100ms timeout
+  struct timespec timeout {
+    .tv_sec = 0,
+    .tv_nsec = 100000000 // 100ms timeout
   };
 
   while (auto running = m_running.load(std::memory_order_acquire)) {
@@ -129,6 +129,8 @@ void SocketServer::handle_events() noexcept
         LOG_AUDIO(Info, "received message");
         if (!m_command_queue.write(&msg))
           LOG_AUDIO(Warn, "error writing message");
+
+        LOG_AUDIO(Info, "Wrote message");
       }
     }
   }
@@ -148,7 +150,7 @@ void SocketServer::stop() noexcept
 {
   m_running.store(false, std::memory_order_release);
 
-  LOG_AUDIO(Info, "attempting to join thread");
+  LOG_AUDIO(Info, "attempting to join socket server thread");
   if (m_event_thread.joinable())
     m_event_thread.join();
 }
