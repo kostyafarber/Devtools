@@ -67,13 +67,12 @@ void SocketServer::handle_events() noexcept
   const int MAX_EVENTS = 32;
   struct kevent events[MAX_EVENTS];
 
-  struct timespec timeout {
-    .tv_sec = 0,
-    .tv_nsec = 100000000 // 100ms timeout
+  struct timespec timeout{
+      .tv_sec = 0,
+      .tv_nsec = 100000000 // 100ms timeout
   };
 
   while (auto running = m_running.load(std::memory_order_acquire)) {
-    LOG_AUDIO(Info, "Starting event loop");
     int n = kevent(m_kqueue_fd, nullptr, 0, events, MAX_EVENTS, &timeout);
 
     if (n == -1) {
@@ -81,8 +80,8 @@ void SocketServer::handle_events() noexcept
       continue;
     }
 
-    LOG_AUDIO(Info, "processing {} events", n);
     for (int i = 0; i < n; i++) {
+      LOG_AUDIO(Info, "processing {} events", n);
       if (events[i].ident == m_listening_socket.fd()) {
         if (events[i].flags & EV_EOF) {
           LOG_AUDIO(Error, "EOF on listening socket");

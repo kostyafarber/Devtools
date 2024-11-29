@@ -91,12 +91,6 @@ bool UnixSocket::try_recv(SynthMessage &message) noexcept
   ssize_t bytes_received =
       recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
 
-  if (bytes_received != sizeof(message))
-    LOG_AUDIO(Info,
-              "did not read whole message: bytes bytes_received={} "
-              "sizeof(message)={}",
-              bytes_received, sizeof(message));
-
   return bytes_received == sizeof(message);
 }
 } // namespace ipc

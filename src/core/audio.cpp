@@ -189,8 +189,7 @@ void AudioProcess::read_commands() noexcept
   LOG_AUDIO(Info, "listening for commands");
   while (m_initialised.load(std::memory_order_acquire)) {
     ipc::SynthMessage msg;
-    LOG_AUDIO(Info, "checking for command");
-    if (m_command_buffer.read(&msg, sizeof(msg))) {
+    if (m_command_buffer.read(&msg)) {
       LOG_AUDIO(Info, "processing command from command buffer");
       process_command(msg);
     }
