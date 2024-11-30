@@ -1,8 +1,6 @@
 #include "socket.h"
-#include "base/logging.h"
 #include "ipc/messages/message_header.h"
 #include "messages.pb.h"
-#include <cstddef>
 #include <cstring>
 #include <filesystem>
 #include <sys/_types/_ssize_t.h>
@@ -81,25 +79,24 @@ base::ErrorOr<UnixSocket> UnixSocket::accept()
   return UnixSocket(client_fd, m_path);
 }
 
-bool UnixSocket::send_exactly(synth::SynthMessage &msg, size_t size)
-{
-  ssize_t bytes_sent = ::send(m_socket_fd, &msg, size, MSG_NOSIGNAL);
-  return size == bytes_sent;
-}
-
-bool UnixSocket::recv_exactly(synth::SynthMessage &msg, size_t size)
-{
-  ssize_t bytes_sent = ::recv(m_socket_fd, &msg, size, MSG_NOSIGNAL);
-  return size == bytes_sent;
-}
-
-bool UnixSocket::try_send(ipc::MessageHeader &header,
+bool UnixSocket::try_send(ipc::MessageHeader::Raw &header,
                           const synth::SynthMessage &message) noexcept
 {
-  ssize_t bytes_sent =
-      ::send(m_socket_fd, &message, sizeof(message), MSG_NOSIGNAL);
+  if (!recv_exactly(&header, sizeof(header))) {
+    LOG_AUDIO(Warn, "could not read header");
+    return false;
+  }
 
-  return bytes_sent == sizeof(message);
+  auto validate = ipc::MessageHeader::validate(header);
+  if (validate != ipc::MessageHeader::ValidationResult::Valid) {
+    LOG_AUDIO(Error, "error validating bytes");
+    return false;
+  }
+
+  if (!recv_exactly(&message, header.size)) {
+  }
+
+  return true;
 }
 
 bool UnixSocket::try_recv(ipc::MessageHeader &header,
@@ -107,10 +104,11 @@ bool UnixSocket::try_recv(ipc::MessageHeader &header,
 {
   ipc::MessageHeader::Raw raw_header;
 
-  if (!recv_exactly(, size_t size))
+  if (!recv_exactly(&raw_header, sizeof(header)))
+    return true;
 
-    ssize_t bytes_received =
-        ::recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
+  ssize_t bytes_received =
+      ::recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
 
   return bytes_received == sizeof(message);
 }

@@ -1,8 +1,11 @@
 #pragma once
 
 #include "base/error.h"
+#include "base/logging.h"
 #include "ipc/messages/message_header.h"
 #include "messages.pb.h"
+#include <cstdio>
+#include <sys/socket.h>
 #include <unistd.h>
 
 namespace ipc {
@@ -43,8 +46,45 @@ public:
   base::ErrorOr<UnixSocket> accept();
 
 private:
-  bool send_exactly(synth::SynthMessage &msg, size_t);
-  bool recv_exactly(synth::SynthMessage &msg, size_t);
+  template <typename T>
+  bool send_exactly(T *msg, size_t size)
+  {
+    size_t total_bytes_sent = 0;
+    auto buffer = reinterpret_cast<uint8_t *>(msg);
+
+    while (total_bytes_sent < size) {
+      ssize_t bytes_sent = ::send(m_socket_fd, buffer + total_bytes_sent,
+                                  size - total_bytes_sent, MSG_NOSIGNAL);
+
+      if (bytes_sent == -1) {
+        LOG_AUDIO(Error, "error trying to send bytes");
+        return false;
+      }
+    }
+    return size == total_bytes_sent;
+  }
+
+  template <typename T>
+  bool recv_exactly(T *msg, size_t size)
+  {
+
+    size_t total_bytes_read = 0;
+    auto buffer = reinterpret_cast<uint8_t *>(msg);
+
+    while (total_bytes_read < size) {
+      ssize_t bytes_read = ::recv(m_socket_fd, buffer + total_bytes_read,
+                                  size - total_bytes_read, MSG_DONTWAIT);
+
+      if (bytes_read == -1) {
+        LOG_AUDIO(Error, "error trying to read bytes");
+        return false;
+      }
+
+      total_bytes_read = total_bytes_read + bytes_read;
+    }
+
+    return size == total_bytes_read;
+  }
 
   std::string m_path;
   UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path) {};
