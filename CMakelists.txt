@@ -11,25 +11,35 @@ if(ENABLE_AUDIO_DEBUG)
   add_compile_definitions(ENABLE_AUDIO_DEBUG)
 endif()
 
+find_package(Protobuf REQUIRED)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS protos/synth/messages.proto)
+
 add_library(core_lib
   ${CMAKE_SOURCE_DIR}/src/core/process_manager.cpp
   ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
   ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket.cpp
   ${CMAKE_SOURCE_DIR}/src/ipc/socket_server.cpp
+  ${PROTO_SRCS}
+  ${PROTO_HDRS}
 )
 
 find_library(COREAUDIO CoreAudio)
 find_library(AUDIOUNIT AudioUnit)
 find_library(AUDIOTOOLBOX AudioToolbox)
 
+target_include_directories(core_lib PUBLIC
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_BINARY_DIR}
+  ${Protobuf_INCLUDE_DIRS}
+)
+
 target_link_libraries(core_lib PUBLIC
   ${COREAUDIO}
   ${AUDIOUNIT}
   ${AUDIOTOOLBOX}
+  ${Protobuf_LIBRARIES}
 )
-
-target_include_directories(core_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 add_executable(Devtools main.cpp)
 target_link_libraries(Devtools PRIVATE core_lib)

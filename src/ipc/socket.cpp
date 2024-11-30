@@ -1,5 +1,8 @@
 #include "socket.h"
 #include "base/logging.h"
+#include "ipc/messages/message_header.h"
+#include "messages.pb.h"
+#include <cstddef>
 #include <cstring>
 #include <filesystem>
 #include <sys/_types/_ssize_t.h>
@@ -78,18 +81,36 @@ base::ErrorOr<UnixSocket> UnixSocket::accept()
   return UnixSocket(client_fd, m_path);
 }
 
-bool UnixSocket::try_send(const SynthMessage &message) noexcept
+bool UnixSocket::send_exactly(synth::SynthMessage &msg, size_t size)
+{
+  ssize_t bytes_sent = ::send(m_socket_fd, &msg, size, MSG_NOSIGNAL);
+  return size == bytes_sent;
+}
+
+bool UnixSocket::recv_exactly(synth::SynthMessage &msg, size_t size)
+{
+  ssize_t bytes_sent = ::recv(m_socket_fd, &msg, size, MSG_NOSIGNAL);
+  return size == bytes_sent;
+}
+
+bool UnixSocket::try_send(ipc::MessageHeader &header,
+                          const synth::SynthMessage &message) noexcept
 {
   ssize_t bytes_sent =
-      send(m_socket_fd, &message, sizeof(message), MSG_NOSIGNAL);
+      ::send(m_socket_fd, &message, sizeof(message), MSG_NOSIGNAL);
 
   return bytes_sent == sizeof(message);
 }
 
-bool UnixSocket::try_recv(SynthMessage &message) noexcept
+bool UnixSocket::try_recv(ipc::MessageHeader &header,
+                          synth::SynthMessage &message) noexcept
 {
-  ssize_t bytes_received =
-      recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
+  ipc::MessageHeader::Raw raw_header;
+
+  if (!recv_exactly(, size_t size))
+
+    ssize_t bytes_received =
+        ::recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
 
   return bytes_received == sizeof(message);
 }

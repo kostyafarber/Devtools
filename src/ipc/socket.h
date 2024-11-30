@@ -1,7 +1,8 @@
 #pragma once
 
 #include "base/error.h"
-#include "ipc/messages/synth_message.h"
+#include "ipc/messages/message_header.h"
+#include "messages.pb.h"
 #include <unistd.h>
 
 namespace ipc {
@@ -29,8 +30,10 @@ public:
   }
   UnixSocket &operator=(UnixSocket &&) noexcept;
 
-  bool try_send(const SynthMessage &message) noexcept;
-  bool try_recv(SynthMessage &message) noexcept;
+  bool try_send(ipc::MessageHeader &header,
+                const synth::SynthMessage &message) noexcept;
+  bool try_recv(ipc::MessageHeader &header,
+                synth::SynthMessage &message) noexcept;
 
   int fd() const { return m_socket_fd; }
   std::string socket_path() const { return m_path; }
@@ -40,6 +43,9 @@ public:
   base::ErrorOr<UnixSocket> accept();
 
 private:
+  bool send_exactly(synth::SynthMessage &msg, size_t);
+  bool recv_exactly(synth::SynthMessage &msg, size_t);
+
   std::string m_path;
   UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path) {};
   int m_socket_fd{-1};

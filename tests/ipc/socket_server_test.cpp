@@ -1,5 +1,6 @@
 
 #include "ipc/socket_server.h"
+#include "messages.pb.h"
 #include "ru/ring_buffer.h"
 #include <chrono>
 #include <gmock/gmock.h>
@@ -55,6 +56,11 @@ TEST_F(SocketServerTest, SendReceive)
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   ipc::SynthMessage msg;
+
+  synth::SynthMessage message;
+  message.set_command(synth::SynthMessage::INCREASE_VOLUME);
+  message.set_volume(0.5);
+
   msg.m_message = ipc::SynthCommand::IncreaseVolume;
   msg.data.volume = 0.2;
 

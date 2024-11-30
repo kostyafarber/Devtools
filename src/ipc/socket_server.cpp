@@ -1,4 +1,5 @@
 #include "ipc/socket_server.h"
+#include "ipc/messages/message_header.h"
 #include "ru/ring_buffer.h"
 #include <atomic>
 #include <sys/event.h>
@@ -119,11 +120,14 @@ void SocketServer::handle_events() noexcept
           continue;
         }
 
-        ipc::SynthMessage msg;
-        if (!client->second.try_recv(msg)) {
+        ipc::MessageHeader header;
+        synth::SynthMessage msg;
+        if (!client->second.try_recv(header, msg)) {
           LOG_AUDIO(Error, "Error receiving message");
           continue;
         }
+
+        // add conversion step
 
         LOG_AUDIO(Info, "received message");
         if (!m_command_queue.write(&msg))
