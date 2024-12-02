@@ -1,4 +1,5 @@
 #pragma once
+#include "base/logging.h"
 #include <cstddef>
 #include <cstdint>
 
@@ -21,12 +22,17 @@ public:
 
   static ValidationResult validate(const Raw &raw) noexcept
   {
-    if (raw.magic != MAGIC)
+    if (raw.magic != MAGIC) {
+      LOG_AUDIO(Info, "invalid magic");
       return ValidationResult::InvalidMagic;
+    }
 
-    if (raw.size > MAX_MESSAGE_SIZE)
+    if (raw.size > MAX_MESSAGE_SIZE) {
+      LOG_AUDIO(Info, "size too large");
       return ValidationResult::SizeTooLarge;
+    }
 
+    LOG_AUDIO(Info, "valid result");
     return ValidationResult::Valid;
   }
 

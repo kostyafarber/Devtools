@@ -1,13 +1,12 @@
 
 #pragma once
 
-#include "base/error.h"
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <vector>
 
-namespace ru {
+namespace base {
 
 template <typename T>
 class RingBuffer

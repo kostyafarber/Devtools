@@ -1,0 +1,23 @@
+set(SOURCES
+    process_manager.cpp
+    synthesiser.cpp
+    audio.cpp
+)
+
+# add_library(audio ${SOURCES})
+
+# target_include_directories(audio PUBLIC
+# ${PROJECT_SOURCE_DIR}/base/
+# ${PROJECT_SOURCE_DIR}/ipc/
+# )
+find_library(COREAUDIO CoreAudio)
+find_library(AUDIOUNIT AudioUnit)
+find_library(AUDIOTOOLBOX AudioToolbox)
+
+# target_link_libraries(audio PUBLIC
+# ${COREAUDIO}
+# ${AUDIOUNIT}
+# ${AUDIOTOOLBOX}
+# )
+
+# target_link_libraries(audio PUBLIC core_lib)

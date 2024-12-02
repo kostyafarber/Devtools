@@ -1,7 +1,7 @@
 #include "core/audio.h"
 #include "ipc/constants.h"
 #include "ipc/messages/synth_message.h"
-#include "ipc/socket.h"
+#include "ipc/unix_socket.h"
 #include <chrono>
 #include <gtest/gtest.h>
 #include <mach/clock_types.h>

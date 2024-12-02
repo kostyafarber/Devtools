@@ -1,0 +1,10 @@
+set(SOURCES
+    socket_server.cpp
+    unix_socket.cpp
+)
+
+add_library(ipc ${SOURCES})
+target_include_directories(ipc PUBLIC
+    ${PROJECT_SOURCE_DIR}
+)
+target_link_libraries(ipc PUBLIC core_lib ipc_proto)

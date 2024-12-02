@@ -1,6 +1,4 @@
-#include "socket.h"
-#include "ipc/messages/message_header.h"
-#include "messages.pb.h"
+#include "unix_socket.h"
 #include <cstring>
 #include <filesystem>
 #include <sys/_types/_ssize_t.h>
@@ -30,7 +28,7 @@ UnixSocket &UnixSocket::operator=(UnixSocket &&other) noexcept
 base::ErrorOr<UnixSocket> UnixSocket::create(const std::string &path)
 {
   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (fd == 1)
+  if (fd == -1)
     return base::Error::from_errno("failed socket creation");
 
   return UnixSocket(fd, path);
@@ -77,39 +75,5 @@ base::ErrorOr<UnixSocket> UnixSocket::accept()
     return base::Error::from_errno("failed to accept connection");
 
   return UnixSocket(client_fd, m_path);
-}
-
-bool UnixSocket::try_send(ipc::MessageHeader::Raw &header,
-                          const synth::SynthMessage &message) noexcept
-{
-  if (!recv_exactly(&header, sizeof(header))) {
-    LOG_AUDIO(Warn, "could not read header");
-    return false;
-  }
-
-  auto validate = ipc::MessageHeader::validate(header);
-  if (validate != ipc::MessageHeader::ValidationResult::Valid) {
-    LOG_AUDIO(Error, "error validating bytes");
-    return false;
-  }
-
-  if (!recv_exactly(&message, header.size)) {
-  }
-
-  return true;
-}
-
-bool UnixSocket::try_recv(ipc::MessageHeader &header,
-                          synth::SynthMessage &message) noexcept
-{
-  ipc::MessageHeader::Raw raw_header;
-
-  if (!recv_exactly(&raw_header, sizeof(header)))
-    return true;
-
-  ssize_t bytes_received =
-      ::recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
-
-  return bytes_received == sizeof(message);
 }
 } // namespace ipc

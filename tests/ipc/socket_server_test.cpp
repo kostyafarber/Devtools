@@ -1,7 +1,7 @@
 
+#include "base/ring_buffer.h"
 #include "ipc/socket_server.h"
 #include "messages.pb.h"
-#include "ru/ring_buffer.h"
 #include <chrono>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -14,7 +14,7 @@ protected:
 
   std::string m_socket_path;
 
-  ru::RingBuffer<ipc::SynthMessage> m_command_queue{5};
+  base::RingBuffer<ipc::SynthMessage> m_command_queue{5};
 
   void TearDown() override { std::remove(m_socket_path.c_str()); }
 };

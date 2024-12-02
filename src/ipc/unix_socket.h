@@ -2,7 +2,7 @@
 
 #include "base/error.h"
 #include "base/logging.h"
-#include "ipc/messages/message_header.h"
+#include "ipc/message_header.h"
 #include "messages.pb.h"
 #include <cstdio>
 #include <sys/socket.h>
@@ -27,16 +27,12 @@ public:
   UnixSocket(UnixSocket &&other)
       : m_socket_fd(other.m_socket_fd), m_path(std::move(other.m_path)),
         m_running(other.m_running)
+
   {
     other.m_socket_fd = -1;
     other.m_running = false;
   }
   UnixSocket &operator=(UnixSocket &&) noexcept;
-
-  bool try_send(ipc::MessageHeader &header,
-                const synth::SynthMessage &message) noexcept;
-  bool try_recv(ipc::MessageHeader &header,
-                synth::SynthMessage &message) noexcept;
 
   int fd() const { return m_socket_fd; }
   std::string socket_path() const { return m_path; }
@@ -45,9 +41,8 @@ public:
   base::ErrorOr<void> listen();
   base::ErrorOr<UnixSocket> accept();
 
-private:
   template <typename T>
-  bool send_exactly(T *msg, size_t size)
+  bool send(T *msg, size_t size)
   {
     size_t total_bytes_sent = 0;
     auto buffer = reinterpret_cast<uint8_t *>(msg);
@@ -55,17 +50,21 @@ private:
     while (total_bytes_sent < size) {
       ssize_t bytes_sent = ::send(m_socket_fd, buffer + total_bytes_sent,
                                   size - total_bytes_sent, MSG_NOSIGNAL);
+      LOG_AUDIO(Info, "bytes sent: {}", bytes_sent);
 
       if (bytes_sent == -1) {
         LOG_AUDIO(Error, "error trying to send bytes");
         return false;
       }
+
+      total_bytes_sent = total_bytes_sent + bytes_sent;
     }
+    LOG_AUDIO(Info, "total bytes sent: {}", total_bytes_sent);
     return size == total_bytes_sent;
   }
 
   template <typename T>
-  bool recv_exactly(T *msg, size_t size)
+  bool recv(T *msg, size_t size)
   {
 
     size_t total_bytes_read = 0;
@@ -86,6 +85,7 @@ private:
     return size == total_bytes_read;
   }
 
+private:
   std::string m_path;
   UnixSocket(int fd, std::string path) : m_socket_fd(fd), m_path(path) {};
   int m_socket_fd{-1};

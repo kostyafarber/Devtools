@@ -1,6 +1,7 @@
 #include "ipc/socket_server.h"
+#include "base/ring_buffer.h"
 #include "ipc/messages/message_header.h"
-#include "ru/ring_buffer.h"
+#include "ipc/messages/synth_message.h"
 #include <atomic>
 #include <sys/event.h>
 
@@ -22,7 +23,7 @@ SocketServer &SocketServer::operator=(SocketServer &&other) noexcept
 
 base::ErrorOr<SocketServer>
 SocketServer::create(const std::string &socket_path,
-                     ru::RingBuffer<SynthMessage> &command_queue)
+                     base::RingBuffer<SynthMessage> &command_queue)
 {
   auto queue_fd = kqueue();
   if (queue_fd == -1)
@@ -120,17 +121,28 @@ void SocketServer::handle_events() noexcept
           continue;
         }
 
-        ipc::MessageHeader header;
+        ipc::MessageHeader::Raw header;
         synth::SynthMessage msg;
         if (!client->second.try_recv(header, msg)) {
           LOG_AUDIO(Error, "Error receiving message");
           continue;
         }
 
+        ipc::SynthMessage fixed_msg; // fixed struct
+        fixed_msg.m_message = static_cast<ipc::SynthCommand>(msg.command());
+
+        if (msg.has_frequency()) {
+          fixed_msg.data.frequency = msg.frequency();
+        } else if (msg.has_volume()) {
+          fixed_msg.data.volume = msg.volume();
+        } else if (msg.has_duty_cycle()) {
+          fixed_msg.data.duty_cycle = msg.duty_cycle();
+        }
+
         // add conversion step
 
         LOG_AUDIO(Info, "received message");
-        if (!m_command_queue.write(&msg))
+        if (!m_command_queue.write(&fixed_msg))
           LOG_AUDIO(Warn, "error writing message");
 
         LOG_AUDIO(Info, "Wrote message");

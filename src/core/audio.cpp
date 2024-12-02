@@ -3,6 +3,7 @@
 #include "ipc/constants.h"
 #include "ipc/messages/synth_message.h"
 #include "ipc/socket_server.h"
+#include "logging.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreAudioTypes/CoreAudioTypes.h>
 #include <MacTypes.h>
@@ -155,7 +156,7 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     break;
 
   case ipc::SynthCommand::DecreaseVolume:
-    LOG_AUDIO(Info, "decreeing volume by: {:2f}", message.data.volume);
+    LOG_AUDIO(Info, "decreasing volume by: {:2f}", message.data.volume);
     m_synth->decrease_volume(message.data.volume);
     break;
 
@@ -180,6 +181,7 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     break;
 
   default:
+    LOG_AUDIO(Warn, "unknowing command");
     break;
   }
 }

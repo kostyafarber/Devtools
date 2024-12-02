@@ -1,10 +1,11 @@
 
-#include "ipc/socket.h"
+#include "ipc/messages/message_header.h"
+#include "ipc/unix_socket.h"
+#include "messages.pb.h"
 #include <chrono>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <thread>
-
 class UnixSocketTest : public testing::Test
 {
 protected:
@@ -65,8 +66,13 @@ TEST_F(UnixSocketTest, Send)
   auto maybe_connect = client.connect();
   ASSERT_FALSE(maybe_connect.is_error());
 
-  ipc::SynthMessage msg{.data.volume = 0.5};
-  auto sent = client.try_send(msg);
+  ipc::MessageHeader::Raw header;
+  synth::SynthMessage msg;
+
+  msg.set_command(synth::SynthMessage::INCREASE_VOLUME);
+  msg.set_volume(0.5f);
+
+  auto sent = client.try_send(header, msg);
 
   ASSERT_TRUE(sent);
 }
@@ -91,15 +97,24 @@ TEST_F(UnixSocketTest, Receive)
   ASSERT_FALSE(maybe_accepted.is_error());
   auto accepted_socket = std::move(maybe_accepted.value());
 
-  ipc::SynthMessage msg{.data.volume = 0.5};
-  auto sent = client.try_send(msg);
+  ipc::MessageHeader::Raw header{.magic = ipc::MessageHeader::MAGIC, .size = 0};
+  synth::SynthMessage msg;
+
+  msg.set_command(synth::SynthMessage::INCREASE_VOLUME);
+  msg.set_volume(0.5f);
+
+  auto sent = client.try_send(header, msg);
 
   ASSERT_TRUE(sent);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-  ipc::SynthMessage rec_msg;
-  sent = accepted_socket.try_recv(rec_msg);
+  ipc::MessageHeader::Raw recv_header;
+  synth::SynthMessage recv_msg;
+  sent = accepted_socket.try_recv(recv_header, recv_msg);
 
   ASSERT_TRUE(sent);
+  
+
+  ASSERT_EQ(recv_msg.command(), val2)
 }

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "base/logging.h"
-#include "ipc/socket.h"
-#include "ru/ring_buffer.h"
+#include "base/ring_buffer.h"
+#include "ipc/messages/synth_message.h"
+#include "ipc/unix_socket.h"
 #include <atomic>
-#include <map>
 #include <sys/event.h>
 #include <thread>
 
@@ -14,7 +13,7 @@ class SocketServer
 public:
   static base::ErrorOr<SocketServer>
   create(const std::string &socket_path,
-         ru::RingBuffer<SynthMessage> &command_queue);
+         base::RingBuffer<SynthMessage> &command_queue);
 
   ~SocketServer()
   {
@@ -43,14 +42,14 @@ public:
 
 private:
   SocketServer(int kqueue_fd, ipc::UnixSocket &&socket,
-               ru::RingBuffer<SynthMessage> &command_queue)
+               base::RingBuffer<ipc::SynthMessage> &command_queue)
       : m_kqueue_fd(kqueue_fd), m_listening_socket(std::move(socket)),
         m_command_queue(command_queue) {};
 
   void handle_events() noexcept;
   std::map<size_t, ipc::UnixSocket> m_clients;
 
-  ru::RingBuffer<ipc::SynthMessage> &m_command_queue;
+  base::RingBuffer<ipc::SynthMessage> &m_command_queue;
 
   ipc::UnixSocket m_listening_socket;
   int m_kqueue_fd;

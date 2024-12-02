@@ -5,68 +5,166 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 20)
 set(EXPORT_COMPILE_COMMANDS ON)
 
+OPTION(ENABLE_TESTING "Enable testing" OFF)
 option(ENABLE_AUDIO_DEBUG "Enable audio debugging" OFF)
+option(BUILD_AUDIO "Build audio component" ON)
+option(BUILD_IPC "Build IPC component" ON)
+
+set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
+set(PROJECT_TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
+
+add_library(core_lib INTERFACE)
+target_include_directories(core_lib INTERFACE ${PROJECT_SOURCE_DIR}/base)
+
+if(ENABLE_TESTING)
+  enable_testing()
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG b514bdc898e2951020cbdca1304b75f5950d1f59 # release-1.10.0
+  )
+
+  target_link_libraries(core_lib INTERFACE
+    GTest::gtest_main
+    GTest::gmock_main
+  )
+
+  FetchContent_MakeAvailable(googletest)
+endif()
 
 if(ENABLE_AUDIO_DEBUG)
   add_compile_definitions(ENABLE_AUDIO_DEBUG)
 endif()
 
-find_package(Protobuf REQUIRED)
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS protos/synth/messages.proto)
+if(BUILD_AUDIO)
+  add_subdirectory(src/core)
 
-add_library(core_lib
-  ${CMAKE_SOURCE_DIR}/src/core/process_manager.cpp
-  ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
-  ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
-  ${CMAKE_SOURCE_DIR}/src/ipc/socket.cpp
-  ${CMAKE_SOURCE_DIR}/src/ipc/socket_server.cpp
-  ${PROTO_SRCS}
-  ${PROTO_HDRS}
-)
+  if(ENABLE_TESTING)
+    add_subdirectory(tests/core)
+  endif()
+endif()
 
-find_library(COREAUDIO CoreAudio)
-find_library(AUDIOUNIT AudioUnit)
-find_library(AUDIOTOOLBOX AudioToolbox)
+if(BUILD_IPC)
+  FetchContent_Declare(
+    abseil
+    GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+    GIT_TAG 20240116.1
+  )
+  FetchContent_MakeAvailable(abseil)
 
-target_include_directories(core_lib PUBLIC
-  ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_BINARY_DIR}
-  ${Protobuf_INCLUDE_DIRS}
-)
+  find_package(Protobuf REQUIRED)
 
-target_link_libraries(core_lib PUBLIC
-  ${COREAUDIO}
-  ${AUDIOUNIT}
-  ${AUDIOTOOLBOX}
-  ${Protobuf_LIBRARIES}
-)
+  # Generate proto files only if IPC is enabled
+  protobuf_generate_cpp(
+    PROTO_SRCS
+    PROTO_HDRS
+    protos/synth/messages.proto
+  )
 
-add_executable(Devtools main.cpp)
-target_link_libraries(Devtools PRIVATE core_lib)
+  # Create IPC-specific proto library
+  add_library(ipc_proto ${PROTO_SRCS})
+  target_include_directories(ipc_proto PUBLIC
+    ${CMAKE_BINARY_DIR}
+    ${Protobuf_INCLUDE_DIRS}
+  )
+  target_link_libraries(ipc_proto PUBLIC
+    protobuf::libprotobuf
+    absl::log
+    absl::log_internal_message
+    absl::log_internal_check_op
+    absl::flags
+    absl::flags_parse
+    absl::strings
+  )
 
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG b514bdc898e2951020cbdca1304b75f5950d1f59 # release-1.10.0
-)
+  add_subdirectory(src/ipc)
 
-FetchContent_MakeAvailable(googletest)
+  if(ENABLE_TESTING)
+    add_subdirectory(tests/ipc)
+  endif()
+endif()
 
-# Add test executable
-add_executable(unit_tests
-  tests/core/process_manager_test.cpp
-  tests/core/audio_test.cpp
-  tests/core/synthesiser_test.cpp
-  tests/ru/ring_buffer_test.cpp
-  tests/ipc/socket_test.cpp
-  tests/ipc/socket_server_test.cpp
-)
-target_link_libraries(unit_tests PRIVATE
-  core_lib
-  GTest::gtest_main
-  GTest::gmock_main
-)
+# add_library(core_lib
+# ${CMAKE_SOURCE_DIR}/src/core/process_manager.cpp
+# )
 
-# Enable testing
-enable_testing()
-add_test(NAME unit_tests COMMAND unit_tests)
+# include_directories(
+# ${CMAKE_SOURCE_DIR}/src
+# ${CMAKE_BINARY_DIR}
+# )
+
+# if(BUILD_AUDIO)
+# add_library(audio_lib
+# ${CMAKE_SOURCE_DIR}/src/core/audio.cpp
+# ${CMAKE_SOURCE_DIR}/src/core/synthesiser.cpp
+# )
+
+# find_library(COREAUDIO CoreAudio)
+# find_library(AUDIOUNIT AudioUnit)
+# find_library(AUDIOTOOLBOX AudioToolbox)
+
+# target_link_libraries(core_lib PUBLIC
+# ${COREAUDIO}
+# ${AUDIOUNIT}
+# ${AUDIOTOOLBOX}
+# )
+
+# target_link_libraries(core_lib PUBLIC audio_lib)
+
+# if(ENABLE_TESTING)
+# add_executable(audio_tests
+# tests/core/audio_test.cpp
+# tests/core/synthesiser_test.cpp
+# )
+
+# target_link_libraries(audio_tests PRIVATE
+# core_lib
+# GTest::gtest_main
+# GTest::gmock_main
+# )
+
+# add_test(NAME audio COMMAND audio_tests)
+# endif()
+# endif()
+
+# if(BUILD_IPC)
+# find_package(Protobuf REQUIRED)
+# protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS protos/synth/messages.proto)
+
+# add_library(ipc_lib
+# ${CMAKE_SOURCE_DIR}/src/ipc/unix_socket.cpp
+# ${CMAKE_SOURCE_DIR}/src/ipc/socket_server.cpp
+# ${PROTO_SRCS}
+# ${PROTO_HDRS}
+# )
+
+# target_include_directories(ipc_lib PUBLIC ${Protobuf_INCLUDE_DIRS})
+# target_link_libraries(ipc_lib PUBLIC ${Protobuf_LIBRARIES})
+# target_link_libraries(core_lib PUBLIC ipc_lib)
+
+# if(ENABLE_TESTING)
+# add_executable(ipc_tests
+# tests/ipc/unix_socket_test.cpp
+# tests/ipc/socket_server_test.cpp
+# )
+
+# target_link_libraries(ipc_tests PRIVATE
+# core_lib
+# GTest::gtest_main
+# GTest::gmock_main
+# )
+
+# add_test(NAME ipc COMMAND ipc_tests)
+# endif()
+# endif()
+
+# add_executable(Devtools main.cpp)
+# target_link_libraries(Devtools PRIVATE core_lib)
+
+# add_executable(core_tests
+# tests/core/process_manager_test.cpp
+# tests/ru/ring_buffer_test.cpp
+# )
+
+# add_test(NAME core COMMAND core_tests)
+# endif()
