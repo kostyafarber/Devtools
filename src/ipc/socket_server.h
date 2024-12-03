@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/ring_buffer.h"
-#include "ipc/messages/synth_message.h"
+#include "ipc/synth_message.h"
 #include "ipc/unix_socket.h"
 #include <atomic>
 #include <sys/event.h>

@@ -53,7 +53,8 @@ public:
       LOG_AUDIO(Info, "bytes sent: {}", bytes_sent);
 
       if (bytes_sent == -1) {
-        LOG_AUDIO(Error, "error trying to send bytes");
+        auto err = base::Error::from_errno("");
+        LOG_AUDIO(Error, "error sending bytes: {}", err.message());
         return false;
       }
 
@@ -74,6 +75,7 @@ public:
       ssize_t bytes_read = ::recv(m_socket_fd, buffer + total_bytes_read,
                                   size - total_bytes_read, MSG_DONTWAIT);
 
+      LOG_AUDIO(Info, "bytes read: {}", bytes_read);
       if (bytes_read == -1) {
         LOG_AUDIO(Error, "error trying to read bytes");
         return false;

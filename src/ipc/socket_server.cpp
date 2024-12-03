@@ -1,7 +1,7 @@
 #include "ipc/socket_server.h"
 #include "base/ring_buffer.h"
-#include "ipc/messages/message_header.h"
-#include "ipc/messages/synth_message.h"
+#include "ipc/message_header.h"
+#include "ipc/synth_message.h"
 #include <atomic>
 #include <sys/event.h>
 
@@ -121,23 +121,23 @@ void SocketServer::handle_events() noexcept
           continue;
         }
 
-        ipc::MessageHeader::Raw header;
-        synth::SynthMessage msg;
-        if (!client->second.try_recv(header, msg)) {
-          LOG_AUDIO(Error, "Error receiving message");
-          continue;
-        }
+        // ipc::MessageHeader::Raw header;
+        // synth::SynthMessage msg;
+        // if (!client->second.try_recv(header, msg)) {
+        //   LOG_AUDIO(Error, "Error receiving message");
+        //   continue;
+        // }
 
         ipc::SynthMessage fixed_msg; // fixed struct
-        fixed_msg.m_message = static_cast<ipc::SynthCommand>(msg.command());
+        // fixed_msg.m_message = static_cast<ipc::SynthCommand>(msg.command());
 
-        if (msg.has_frequency()) {
-          fixed_msg.data.frequency = msg.frequency();
-        } else if (msg.has_volume()) {
-          fixed_msg.data.volume = msg.volume();
-        } else if (msg.has_duty_cycle()) {
-          fixed_msg.data.duty_cycle = msg.duty_cycle();
-        }
+        // if (msg.has_frequency()) {
+        //   fixed_msg.data.frequency = msg.frequency();
+        // } else if (msg.has_volume()) {
+        //   fixed_msg.data.volume = msg.volume();
+        // } else if (msg.has_duty_cycle()) {
+        //   fixed_msg.data.duty_cycle = msg.duty_cycle();
+        // }
 
         // add conversion step
 
