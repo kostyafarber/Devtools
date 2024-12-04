@@ -1,4 +1,5 @@
 #pragma once
+
 #include "error.h"
 #include <cstddef>
 #include <cstdint>

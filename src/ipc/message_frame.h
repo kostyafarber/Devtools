@@ -1,7 +1,6 @@
 
 #include "error.h"
 #include "ipc/message_header.h"
-#include "logging.h"
 #include "messages.pb.h"
 #include <cstddef>
 

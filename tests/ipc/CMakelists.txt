@@ -1,13 +1,15 @@
-add_executable(ipc_tests
-    transport_listener_test.cpp
-    command_server_test.cpp
-    unix_socket_test.cpp
-    transport_test.cpp
-)
-target_link_libraries(ipc_tests PRIVATE ipc core_lib)
-target_include_directories(ipc_tests PUBLIC
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/ipc
-)
+if(ENABLE_TESTING)
+    add_executable(ipc_tests
+        transport_listener_test.cpp
+        command_server_test.cpp
+        unix_socket_test.cpp
+        transport_test.cpp
+    )
+    target_link_libraries(ipc_tests PRIVATE ipc core_lib)
+    target_include_directories(ipc_tests PUBLIC
+        ${PROJECT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/ipc
+    )
 
-add_test(NAME ipc_tests COMMAND ipc_tests)
+    add_test(NAME ipc_tests COMMAND ipc_tests)
+endif()

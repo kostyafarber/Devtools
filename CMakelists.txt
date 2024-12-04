@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-point
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 
 OPTION(ENABLE_TESTING "Enable testing" OFF)
+OPTION(ENABLE_INTEGRATION_TESTING "Enable integration testing" OFF)
 option(ENABLE_AUDIO_DEBUG "Enable audio debugging" OFF)
 option(BUILD_AUDIO "Build audio component" ON)
 option(BUILD_IPC "Build IPC component" ON)
@@ -38,14 +39,6 @@ if(ENABLE_AUDIO_DEBUG)
   add_compile_definitions(ENABLE_AUDIO_DEBUG)
 endif()
 
-if(BUILD_AUDIO)
-  add_subdirectory(src/core)
-
-  if(ENABLE_TESTING)
-    add_subdirectory(tests/core)
-  endif()
-endif()
-
 if(BUILD_IPC)
   FetchContent_Declare(
     abseil
@@ -56,14 +49,12 @@ if(BUILD_IPC)
 
   find_package(Protobuf REQUIRED)
 
-  # Generate proto files only if IPC is enabled
   protobuf_generate_cpp(
     PROTO_SRCS
     PROTO_HDRS
     protos/synth/messages.proto
   )
 
-  # Create IPC-specific proto library
   add_library(ipc_proto ${PROTO_SRCS})
   target_include_directories(ipc_proto PUBLIC
     ${CMAKE_BINARY_DIR}
@@ -80,10 +71,19 @@ if(BUILD_IPC)
   )
 
   add_subdirectory(src/ipc)
+  add_subdirectory(tests/ipc)
+  target_link_libraries(core_lib INTERFACE ipc)
+endif()
 
-  if(ENABLE_TESTING)
-    add_subdirectory(tests/ipc)
-  endif()
+if(BUILD_AUDIO)
+  add_subdirectory(src/core)
+  add_subdirectory(tests/core)
+
+  target_link_libraries(core_lib INTERFACE audio)
+endif()
+
+if(ENABLE_INTEGRATION_TESTING)
+  add_subdirectory(tests/integration)
 endif()
 
 # add_library(core_lib

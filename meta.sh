@@ -13,6 +13,7 @@ debug_audio="OFF"
 build_audio="ON"
 build_ipc="ON"
 tests="ON"
+integration="ON"
 
 
 # Parse flags
@@ -40,6 +41,7 @@ cmake -G Ninja \
     -DBUILD_AUDIO=${build_audio} \
     -DBUILD_IPC=${build_ipc} \
     -DENABLE_TESTING=${tests} \
+    -DENABLE_INTEGRATION_TESTING=${integration} \
     .. --fresh
 
 ninja
@@ -47,9 +49,12 @@ ninja
 # Run tests if requested or if no specific target
 if [ "$tests" = "ON" ] && [ "$1" = "test" ]; then
     if [ ! -z "$2" ]; then 
-        GTEST_COLOR=1 GTEST_FILTER="*$2*" ctest --output-on-failure --verbose
+        if [ "$2" == "integration" ]; then
+           GTEST_COLOR=1 GTEST_FILTER="*integration*" ctest --output-on-failure --verbose
+        else
+            GTEST_COLOR=1 GTEST_FILTER="*$2*" ctest --output-on-failure --verbose
+        fi
     else
-        echo "TEST"
         GTEST_COLOR=1 ctest --output-on-failure --verbose
     fi
 fi

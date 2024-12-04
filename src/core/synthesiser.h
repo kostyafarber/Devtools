@@ -1,5 +1,5 @@
 
-#include "ru/clamped.h"
+#include "base/clamped.h"
 #include <cstdint>
 namespace core {
 class Synthesiser
@@ -13,7 +13,8 @@ public:
   Synthesiser(uint32_t sample_rate, uint32_t frequency, float duty_cycle)
       : m_sample_rate(sample_rate), m_frequency(frequency),
         m_duty_cycle(duty_cycle),
-        m_phase_increment(m_frequency / m_sample_rate), m_clamper(0.0f, 1.0f){};
+        m_phase_increment(m_frequency / m_sample_rate),
+        m_clamper(0.0f, 1.0f) {};
   ~Synthesiser() = default;
 
   Synthesiser(const Synthesiser &) = delete;
@@ -39,6 +40,6 @@ private:
   float m_phase_increment; // how much to advance phase per sample (was m_cycle)
   std::atomic<float> m_volume{1.0f}; // amplitude (controls volume)
 
-  Clamped<float> m_clamper;
+  base::Clamped<float> m_clamper;
 };
 } // namespace core

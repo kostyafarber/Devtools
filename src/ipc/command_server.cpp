@@ -99,7 +99,7 @@ void CommandServer::handle_events() noexcept
         LOG_AUDIO(Info, "accepting client");
         auto maybe_client = m_listener.accept();
         if (maybe_client.is_error()) {
-          LOG_AUDIO(Error, "Error accepting client");
+          LOG_AUDIO(Error, "error accepting client");
           continue;
         }
 

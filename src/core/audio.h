@@ -1,6 +1,6 @@
-#include "ipc/messages/synth_message.h"
-#include "ipc/socket_server.h"
-#include "ru/ring_buffer.h"
+#include "base/ring_buffer.h"
+#include "ipc/command_server.h"
+#include "ipc/synth_message.h"
 #include "synthesiser.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
@@ -81,11 +81,11 @@ private:
   AudioUnit m_audio_unit{};
   AudioComponentInstance m_component{};
 
-  ru::RingBuffer<float> m_callback_buffer{};
+  base::RingBuffer<float> m_callback_buffer{};
   std::vector<float> m_temp_buffer{};
 
-  ru::RingBuffer<ipc::SynthMessage> m_command_buffer{};
-  std::optional<ipc::CommandServer> m_socket_server;
+  base::RingBuffer<ipc::SynthMessage> m_command_buffer{};
+  std::optional<ipc::CommandServer> m_command_server;
 
   std::thread m_callback_thread;
   std::thread m_command_thread;
