@@ -6,14 +6,18 @@
 bool ipc::Transport::try_send(const synth::SynthMessage &msg)
 {
   ipc::MessageFrame frame;
-  frame.pack(msg);
+  if (!frame.pack(msg)) {
+    LOG_AUDIO(Error, "failed to pack message");
+    return false;
+  }
 
+  LOG_AUDIO(Info, "header size send: {}", frame.header().size());
   if (!m_socket.send(frame.header().data(), frame.header().size())) {
     LOG_AUDIO(Error, "failed to send header");
     return false;
   }
 
-  if (!m_socket.send(&frame.payload(), frame.payload().size())) {
+  if (!m_socket.send(frame.payload().data(), frame.payload().size())) {
     LOG_AUDIO(Error, "failed to send message");
     return false;
   }
@@ -34,10 +38,17 @@ bool ipc::Transport::try_recv(synth::SynthMessage &msg)
     return false;
   }
 
-  if (!m_socket.recv(&frame.payload(), frame.payload_size_by_header())) {
+  frame.payload().resize(frame.payload_size());
+
+  if (!m_socket.recv(frame.payload().data(), frame.payload_size())) {
     LOG_AUDIO(Error, "failed to read message");
     return false;
   }
 
-  return frame.unpack(msg);
+  if (!frame.unpack(msg)) {
+    LOG_AUDIO(Error, "failed to unpack message");
+    return false;
+  }
+
+  return true;
 }

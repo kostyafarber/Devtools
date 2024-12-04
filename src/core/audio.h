@@ -31,7 +31,7 @@ public:
         m_command_buffer(audio_config.command_buffer_size),
         m_temp_buffer(audio_config.buffer_size),
         m_synth(std::make_unique<core::Synthesiser>(
-            audio_config.sampling_rate, audio_config.frequency, 0.5)){};
+            audio_config.sampling_rate, audio_config.frequency, 0.5)) {};
   ~AudioProcess()
   {
     m_initialised.store(false, std::memory_order_release);
@@ -85,7 +85,7 @@ private:
   std::vector<float> m_temp_buffer{};
 
   ru::RingBuffer<ipc::SynthMessage> m_command_buffer{};
-  std::optional<ipc::SocketServer> m_socket_server;
+  std::optional<ipc::CommandServer> m_socket_server;
 
   std::thread m_callback_thread;
   std::thread m_command_thread;

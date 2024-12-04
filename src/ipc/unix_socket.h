@@ -2,8 +2,6 @@
 
 #include "base/error.h"
 #include "base/logging.h"
-#include "ipc/message_header.h"
-#include "messages.pb.h"
 #include <cstdio>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -45,10 +43,9 @@ public:
   bool send(T *msg, size_t size)
   {
     size_t total_bytes_sent = 0;
-    auto buffer = reinterpret_cast<uint8_t *>(msg);
 
     while (total_bytes_sent < size) {
-      ssize_t bytes_sent = ::send(m_socket_fd, buffer + total_bytes_sent,
+      ssize_t bytes_sent = ::send(m_socket_fd, msg + total_bytes_sent,
                                   size - total_bytes_sent, MSG_NOSIGNAL);
       LOG_AUDIO(Info, "bytes sent: {}", bytes_sent);
 
@@ -69,10 +66,9 @@ public:
   {
 
     size_t total_bytes_read = 0;
-    auto buffer = reinterpret_cast<uint8_t *>(msg);
 
     while (total_bytes_read < size) {
-      ssize_t bytes_read = ::recv(m_socket_fd, buffer + total_bytes_read,
+      ssize_t bytes_read = ::recv(m_socket_fd, msg + total_bytes_read,
                                   size - total_bytes_read, MSG_DONTWAIT);
 
       LOG_AUDIO(Info, "bytes read: {}", bytes_read);

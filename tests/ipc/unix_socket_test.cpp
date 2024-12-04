@@ -1,7 +1,7 @@
 
-#include "ipc/message_header.h"
 #include "ipc/unix_socket.h"
-#include "messages.pb.h"
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -12,6 +12,12 @@ protected:
   void SetUp() override { m_socket_path = "/tmp/test_socket"; }
 
   std::string m_socket_path;
+  struct Msg {
+    static constexpr size_t size = 10;
+    std::array<char, size> data;
+
+    Msg() { std::copy_n("hello world", size, data.begin()); }
+  };
 
   void TearDown() override { std::remove(m_socket_path.c_str()); }
 };
@@ -66,13 +72,8 @@ TEST_F(UnixSocketTest, Send)
   auto maybe_connect = client.connect();
   ASSERT_FALSE(maybe_connect.is_error());
 
-  ipc::MessageHeader::Raw header;
-  synth::SynthMessage msg;
-
-  msg.set_command(synth::SynthMessage::INCREASE_VOLUME);
-  msg.set_volume(0.5f);
-
-  auto sent = client.try_send(header, msg);
+  Msg msg;
+  auto sent = client.send(msg.data.begin(), msg.size);
 
   ASSERT_TRUE(sent);
 }
@@ -95,26 +96,23 @@ TEST_F(UnixSocketTest, Receive)
 
   auto maybe_accepted = socket.accept();
   ASSERT_FALSE(maybe_accepted.is_error());
-  auto accepted_socket = std::move(maybe_accepted.value());
+  auto server = std::move(maybe_accepted.value());
 
-  ipc::MessageHeader::Raw header{.magic = ipc::MessageHeader::MAGIC, .size = 0};
-  synth::SynthMessage msg;
-
-  msg.set_command(synth::SynthMessage::INCREASE_VOLUME);
-  msg.set_volume(0.5f);
-
-  auto sent = client.try_send(header, msg);
+  Msg msg;
+  auto sent = client.send(msg.data.begin(), msg.size);
 
   ASSERT_TRUE(sent);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-  ipc::MessageHeader::Raw recv_header;
-  synth::SynthMessage recv_msg;
-  sent = accepted_socket.try_recv(recv_header, recv_msg);
+  Msg recv_msg;
+  ;
+  server.recv(recv_msg.data.begin(), recv_msg.size);
 
   ASSERT_TRUE(sent);
-  
 
-  ASSERT_EQ(recv_msg.command(), val2)
+  std::array<char, msg.size> expected;
+  std::copy_n("hello world", msg.size, expected.begin());
+
+  ASSERT_EQ(recv_msg.data, expected);
 }

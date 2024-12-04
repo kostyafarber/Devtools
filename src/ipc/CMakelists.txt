@@ -1,5 +1,6 @@
 set(SOURCES
-    socket_server.cpp
+    transport_listener.cpp
+    command_server.cpp
     unix_socket.cpp
     transport.cpp
     message_frame.cpp

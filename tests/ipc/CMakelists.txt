@@ -1,7 +1,7 @@
 add_executable(ipc_tests
-
-    # socket_server_test.cpp
-    # unix_socket_test.cpp
+    transport_listener_test.cpp
+    command_server_test.cpp
+    unix_socket_test.cpp
     transport_test.cpp
 )
 target_link_libraries(ipc_tests PRIVATE ipc core_lib)

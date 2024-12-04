@@ -2,17 +2,17 @@
 #include "message_header.h"
 #include "messages.pb.h"
 
-void ipc::MessageFrame::pack(const synth::SynthMessage &msg)
+bool ipc::MessageFrame::pack(const synth::SynthMessage &msg)
 {
-  auto data = msg.SerializeAsString();
 
-  m_header.set_size(data.size());
-  m_payload = std::move(data);
+  auto size = msg.ByteSizeLong();
+  m_header.set_size(size);
+  m_payload.resize(size);
+
+  return msg.SerializeToArray(m_payload.data(), size);
 }
 
 bool ipc::MessageFrame::unpack(synth::SynthMessage &msg)
 {
-  auto unpacked = msg.ParseFromString(m_payload);
-
-  return unpacked;
+  return msg.ParseFromArray(m_payload.data(), m_header.payload_size());
 }
