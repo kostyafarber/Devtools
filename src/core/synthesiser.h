@@ -25,6 +25,11 @@ public:
 
   void increase_volume(float increase) noexcept;
   void decrease_volume(float decrease) noexcept;
+  void set_volume(float volume) noexcept
+  {
+    m_volume.store(m_clamper.value(volume), std::memory_order_release);
+  }
+
   float volume() const { return m_volume; }
 
   float generate() noexcept;

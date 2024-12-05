@@ -9,8 +9,9 @@ message SynthMessage {
         SET_DUTY_CYCLE = 2;
         START = 3;
         STOP = 4;
-        INCREASE_VOLUME = 5;
-        DECREASE_VOLUME = 6;
+        SET_VOLUME = 5;
+        INCREASE_VOLUME = 6;
+        DECREASE_VOLUME = 7;
     }
 
     Command command = 1;

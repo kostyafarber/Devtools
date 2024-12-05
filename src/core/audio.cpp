@@ -160,6 +160,11 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     m_synth->decrease_volume(message.data.volume);
     break;
 
+  case ipc::SynthCommand::SetVolume:
+    LOG_AUDIO(Info, "setting volume to: {:2f}", message.data.volume);
+    m_synth->set_volume(message.data.volume);
+    break;
+
   case ipc::SynthCommand::SetDutyCycle:
     LOG_AUDIO(Info, "setting duty cycle to: {:2f}", message.data.duty_cycle);
     m_synth->set_duty_cycle(message.data.duty_cycle);

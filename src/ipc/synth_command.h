@@ -6,6 +6,7 @@ enum class SynthCommand
   SetDutyCycle,
   Start,
   Stop,
+  SetVolume,
   IncreaseVolume,
   DecreaseVolume,
 };

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftProtobuf
 
 public enum SocketError: Error, Equatable {
     case socketCreationFailed
@@ -67,5 +68,55 @@ public class UnixSocket {
 
         try createSocket()
         try connectSocket()
+    }
+
+    public func send(_ data: Data) throws {
+        var totalBytesSent = 0
+        let size = data.count
+
+        while totalBytesSent < size {
+            let result = data.withUnsafeBytes { ptr in
+                Darwin.send(
+                    socketHandle,
+                    ptr.baseAddress?.advanced(by: totalBytesSent),
+                    size - totalBytesSent,
+                    0
+                )
+            }
+
+            if result < 0 {
+                throw SocketError.sendFailed
+            }
+
+            totalBytesSent += result
+        }
+    }
+
+    public func receive(size: Int) throws -> Data {
+        var buffer = [UInt8](repeating: 0, count: size)
+        var totalBytesRead = 0
+
+        while totalBytesRead < size {
+            let result = buffer.withUnsafeMutableBytes { ptr in
+                Darwin.recv(
+                    socketHandle,
+                    ptr.baseAddress?.advanced(by: totalBytesRead),
+                    size - totalBytesRead,
+                    0
+                )
+            }
+
+            if result < 0 {
+                throw SocketError.receiveFailed
+            }
+
+            if result == 0 {
+                throw SocketError.receiveFailed  // Connection closed by peer
+            }
+
+            totalBytesRead += result
+        }
+
+        return Data(buffer)
     }
 }

@@ -2,9 +2,10 @@
 
 #include "base/error.h"
 #include "base/logging.h"
-#include <cstdint>
+#include <chrono>
 #include <cstdio>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 
 namespace ipc {
@@ -75,7 +76,14 @@ public:
 
       LOG_AUDIO(Info, "bytes read: {}", bytes_read);
       if (bytes_read == -1) {
-        LOG_AUDIO(Error, "error trying to read bytes");
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          // No data available right now, wait a bit and retry
+          std::this_thread::sleep_for(std::chrono::milliseconds(2));
+          continue;
+        }
+        LOG_AUDIO(Error, "error trying to read bytes: {} ({})", strerror(errno),
+                  errno);
+
         return false;
       }
 
