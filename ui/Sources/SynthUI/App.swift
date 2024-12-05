@@ -45,12 +45,26 @@ struct ContentView: View {
     }
 
     private func setupTransport() {
+        startBackendProcess()
+
         do {
             let socket = UnixSocket(path: "/tmp/socket.server")
             try socket.connect()
             transport = Transport(socket: socket)
         } catch {
             print("Error setting up transport: \(error)")
+        }
+    }
+
+    private func startBackendProcess() {
+        let process = Process()
+        process.executableURL = URL(
+            fileURLWithPath: Bundle.main.bundlePath + "/Contents/MacOS/SynthBackend")
+
+        do {
+            try process.run()
+        } catch {
+            print("Failed to start backend process: \(error)")
         }
     }
 }

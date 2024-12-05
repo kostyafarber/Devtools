@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(Devtools)
+project(AudioSynthesiser)
 include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -90,3 +90,67 @@ add_executable(app
   main.cpp
 )
 target_link_libraries(app PUBLIC core_lib)
+
+# Add after the existing configuration
+include(MacBundle.cmake)
+
+# After building the app target
+function(add_app_icon TARGET_NAME BUNDLE_NAME)
+  set(ICONSET_DIR "${CMAKE_SOURCE_DIR}/AppIcon.iconset")
+  set(ICNS_FILE "${CMAKE_BINARY_DIR}/AppIcon.icns")
+
+  # List all required icon files
+  set(ICON_FILES
+    "${ICONSET_DIR}/icon_16x16.png"
+    "${ICONSET_DIR}/icon_16x16@2x.png"
+    "${ICONSET_DIR}/icon_32x32.png"
+    "${ICONSET_DIR}/icon_32x32@2x.png"
+    "${ICONSET_DIR}/icon_128x128.png"
+    "${ICONSET_DIR}/icon_128x128@2x.png"
+    "${ICONSET_DIR}/icon_256x256.png"
+    "${ICONSET_DIR}/icon_256x256@2x.png"
+    "${ICONSET_DIR}/icon_512x512.png"
+    "${ICONSET_DIR}/icon_512x512@2x.png"
+  )
+
+  # Create a custom target for icon generation
+  add_custom_target(generate_icns
+    COMMAND iconutil -c icns "${ICONSET_DIR}" -o "${ICNS_FILE}"
+    DEPENDS ${ICON_FILES}
+    COMMENT "Converting AppIcon.iconset to AppIcon.icns"
+    VERBATIM
+  )
+
+  # Make the main target depend on icon generation
+  add_dependencies(${TARGET_NAME} generate_icns)
+
+  # Copy icns to app bundle
+  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    "${ICNS_FILE}"
+    "${CMAKE_BINARY_DIR}/${BUNDLE_NAME}.app/Contents/Resources/AppIcon.icns"
+    COMMENT "Copying AppIcon.icns to app bundle"
+  )
+endfunction()
+
+if(APPLE)
+  set(BUNDLE_NAME "SynthUI")
+
+  # Build Swift UI
+  add_custom_target(build_ui
+    COMMAND rm -rf .build
+    COMMAND swift build
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/ui
+  )
+
+  # Make app depend on UI build
+  add_dependencies(app build_ui)
+
+  # Configure Mac bundle
+  configure_mac_bundle(app
+    "${CMAKE_SOURCE_DIR}/ui/.build/debug/SynthUI"
+    "${CMAKE_BINARY_DIR}/app"
+  )
+
+  add_app_icon(app "${BUNDLE_NAME}")
+endif()
