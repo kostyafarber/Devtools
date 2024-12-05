@@ -39,6 +39,10 @@ public:
       stop();
     }
 
+    if (m_command_server) {
+      m_command_server->stop();
+    }
+
     if (m_command_thread.joinable())
       m_command_thread.join();
   }

@@ -32,7 +32,6 @@ ipc::TransportListener::create(const std::string &path)
 
   ipc::TransportListener tl(std::move(socket));
   LOG_AUDIO(Info, "created transport listener");
-  LOG_AUDIO(Info, "fd after creating: {}", tl.m_socket.fd());
 
   if (auto err = tl.m_socket.listen(); err.is_error()) {
     LOG_AUDIO(Error, "failed to listen on socket: {}", err.error().message());

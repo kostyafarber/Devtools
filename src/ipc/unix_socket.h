@@ -2,6 +2,7 @@
 
 #include "base/error.h"
 #include "base/logging.h"
+#include <cstdint>
 #include <cstdio>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -67,6 +68,7 @@ public:
 
     size_t total_bytes_read = 0;
 
+    size_t i = 0;
     while (total_bytes_read < size) {
       ssize_t bytes_read = ::recv(m_socket_fd, msg + total_bytes_read,
                                   size - total_bytes_read, MSG_DONTWAIT);
@@ -74,6 +76,11 @@ public:
       LOG_AUDIO(Info, "bytes read: {}", bytes_read);
       if (bytes_read == -1) {
         LOG_AUDIO(Error, "error trying to read bytes");
+        return false;
+      }
+
+      if (bytes_read == 0) {
+        LOG_AUDIO(Error, "connection closed by peer");
         return false;
       }
 

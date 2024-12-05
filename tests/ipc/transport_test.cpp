@@ -39,7 +39,7 @@ protected:
     if (maybe_client.is_error()) {
       LOG_AUDIO(Error, "error creating client socket: {}",
                 maybe_client.error().message());
-      return maybe_listen.error();
+      return maybe_client.error();
     }
 
     auto client = std::move(maybe_client.value());

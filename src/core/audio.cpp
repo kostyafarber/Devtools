@@ -181,7 +181,7 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     break;
 
   default:
-    LOG_AUDIO(Warn, "unknowing command");
+    LOG_AUDIO(Warn, "unknown command");
     break;
   }
 }

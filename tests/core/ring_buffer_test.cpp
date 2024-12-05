@@ -1,11 +1,11 @@
-#include "ru/ring_buffer.h"
+#include "base/ring_buffer.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <vector>
 
 TEST(RingBuffer, WriteItem)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
 
   auto in_buffer = std::vector<float>{1};
   auto ok = buffer.write(&in_buffer[0]);
@@ -15,7 +15,7 @@ TEST(RingBuffer, WriteItem)
 
 TEST(RingBuffer, WriteNItems)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
 
   auto in_buffer = std::vector<float>{1, 2};
   auto ok = buffer.write(&in_buffer[0], in_buffer.size());
@@ -25,7 +25,7 @@ TEST(RingBuffer, WriteNItems)
 
 TEST(RingBuffer, WriteGreaterThanAvailableSpace)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
 
   auto in_buffer = std::vector<float>{1, 2, 3, 4};
   auto ok = buffer.write(&in_buffer[0], in_buffer.size());
@@ -35,7 +35,7 @@ TEST(RingBuffer, WriteGreaterThanAvailableSpace)
 
 TEST(RingBuffer, ReadItem)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
   auto in_buffer = std::vector<float>{1, 2};
   buffer.write(&in_buffer[0], in_buffer.size());
 
@@ -48,7 +48,7 @@ TEST(RingBuffer, ReadItem)
 
 TEST(RingBuffer, ReadNItems)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
   auto in_buffer = std::vector<float>{1, 2, 3};
   buffer.write(&in_buffer[0], in_buffer.size());
 
@@ -61,7 +61,7 @@ TEST(RingBuffer, ReadNItems)
 
 TEST(RingBuffer, WriteWrapAround)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
 
   auto in_buffer = std::vector<float>{1, 2, 3, 4};
   auto ok = buffer.write(&in_buffer[0], in_buffer.size());
@@ -78,7 +78,7 @@ TEST(RingBuffer, WriteWrapAround)
 
 TEST(RingBuffer, ReadWhenEmptyShouldError)
 {
-  ru::RingBuffer<float> buffer(3);
+  base::RingBuffer<float> buffer(3);
   auto ok = buffer.read(nullptr);
 
   ASSERT_FALSE(ok);

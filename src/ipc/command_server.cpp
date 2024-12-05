@@ -116,7 +116,14 @@ void CommandServer::handle_events() noexcept
       } else {
         auto client = m_clients.find(events[i].ident);
         if (client == m_clients.end()) {
-          LOG_AUDIO(Warn, "Client not found");
+          LOG_AUDIO(Warn, "client not found");
+          continue;
+        }
+        LOG_AUDIO(Info, "found client");
+
+        if (events[i].flags & EV_EOF) {
+          LOG_AUDIO(Error, "EOF client socket");
+          m_clients.erase(events[i].ident);
           continue;
         }
 
