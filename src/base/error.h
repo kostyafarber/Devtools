@@ -18,11 +18,9 @@ public:
   // need to make it static
   static Error from_errno(const std::string &context)
   {
-    // how to assign (make it moveable)
-    // to avoid copying I've made this I'll make this a static method
     auto sys_error = std::strerror(errno);
 
-    return Error(context + ":" + sys_error);
+    return Error(context + ": " + sys_error);
   };
 
   std::string message() { return m_message; }
@@ -30,7 +28,7 @@ public:
 private:
   std::string m_message;
 
-  explicit Error(std::string msg) : m_message(msg){};
+  explicit Error(std::string msg) : m_message(msg) {};
 };
 struct Empty {
 };
@@ -43,8 +41,8 @@ private:
 
 public:
   // two constructors for each type
-  ErrorOr(R value) : m_value(std::move(value)){};
-  ErrorOr(E value) : m_value(std::move(value)){};
+  ErrorOr(R value) : m_value(std::move(value)) {};
+  ErrorOr(E value) : m_value(std::move(value)) {};
 
   bool is_error() { return std::holds_alternative<E>(m_value); }
 
@@ -61,7 +59,7 @@ class ErrorOr<void, E> : public ErrorOr<Empty, E>
 public:
   using ErrorOr<Empty, E>::ErrorOr;
 
-  ErrorOr() : ErrorOr<Empty, E>(Empty{}){};
+  ErrorOr() : ErrorOr<Empty, E>(Empty{}) {};
 };
 
 } // namespace base

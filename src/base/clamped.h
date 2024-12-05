@@ -1,5 +1,6 @@
 #include <algorithm>
 
+namespace base {
 template <typename T>
 struct Clamped {
   T m_min;
@@ -9,3 +10,5 @@ struct Clamped {
 
   T value(T value) { return std::clamp(value, m_min, m_max); }
 };
+
+} // namespace base

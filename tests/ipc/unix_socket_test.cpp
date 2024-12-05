@@ -1,16 +1,23 @@
 
-#include "ipc/socket.h"
+#include "ipc/unix_socket.h"
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <thread>
-
 class UnixSocketTest : public testing::Test
 {
 protected:
   void SetUp() override { m_socket_path = "/tmp/test_socket"; }
 
   std::string m_socket_path;
+  struct Msg {
+    static constexpr size_t size = 10;
+    std::array<char, size> data;
+
+    Msg() { std::copy_n("hello world", size, data.begin()); }
+  };
 
   void TearDown() override { std::remove(m_socket_path.c_str()); }
 };
@@ -65,8 +72,8 @@ TEST_F(UnixSocketTest, Send)
   auto maybe_connect = client.connect();
   ASSERT_FALSE(maybe_connect.is_error());
 
-  ipc::SynthMessage msg{.data.volume = 0.5};
-  auto sent = client.try_send(msg);
+  Msg msg;
+  auto sent = client.send(msg.data.begin(), msg.size);
 
   ASSERT_TRUE(sent);
 }
@@ -89,17 +96,23 @@ TEST_F(UnixSocketTest, Receive)
 
   auto maybe_accepted = socket.accept();
   ASSERT_FALSE(maybe_accepted.is_error());
-  auto accepted_socket = std::move(maybe_accepted.value());
+  auto server = std::move(maybe_accepted.value());
 
-  ipc::SynthMessage msg{.data.volume = 0.5};
-  auto sent = client.try_send(msg);
+  Msg msg;
+  auto sent = client.send(msg.data.begin(), msg.size);
 
   ASSERT_TRUE(sent);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-  ipc::SynthMessage rec_msg;
-  sent = accepted_socket.try_recv(rec_msg);
+  Msg recv_msg;
+  ;
+  server.recv(recv_msg.data.begin(), recv_msg.size);
 
   ASSERT_TRUE(sent);
+
+  std::array<char, msg.size> expected;
+  std::copy_n("hello world", msg.size, expected.begin());
+
+  ASSERT_EQ(recv_msg.data, expected);
 }

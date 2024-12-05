@@ -1,0 +1,13 @@
+if(ENABLE_INTEGRATION_TESTING)
+    add_executable(audio_integration_tests
+        audio_test.cpp
+    )
+
+    target_link_libraries(audio_integration_tests PRIVATE audio core_lib)
+    target_include_directories(audio_integration_tests PRIVATE
+        ${PROJECT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/core
+    )
+
+    add_test(NAME audio_integration_tests COMMAND audio_integration_tests)
+endif()

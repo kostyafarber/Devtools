@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package synth;
+
+message SynthMessage {
+    enum Command {
+        COMMAND_UNSPECIFIED = 0;
+        SET_FREQUENCY = 1;
+        SET_DUTY_CYCLE = 2;
+        START = 3;
+        STOP = 4;
+        INCREASE_VOLUME = 5;
+        DECREASE_VOLUME = 6;
+    }
+
+    Command command = 1;
+    oneof payload {
+        float frequency = 2;
+        float volume = 3;
+        float duty_cycle = 4;
+    }
+}

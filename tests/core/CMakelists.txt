@@ -1,0 +1,15 @@
+if(ENABLE_TESTING)
+    add_executable(audio_tests
+        audio_test.cpp
+        synthesiser_test.cpp
+        ring_buffer_test.cpp
+    )
+
+    target_link_libraries(audio_tests PRIVATE audio core_lib)
+
+    target_include_directories(audio_tests PRIVATE
+        ${PROJECT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/core
+    )
+    add_test(NAME audio_tests COMMAND audio_tests)
+endif()

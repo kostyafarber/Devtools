@@ -1,5 +1,4 @@
-#include "socket.h"
-#include "base/logging.h"
+#include "unix_socket.h"
 #include <cstring>
 #include <filesystem>
 #include <sys/_types/_ssize_t.h>
@@ -29,7 +28,7 @@ UnixSocket &UnixSocket::operator=(UnixSocket &&other) noexcept
 base::ErrorOr<UnixSocket> UnixSocket::create(const std::string &path)
 {
   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (fd == 1)
+  if (fd == -1)
     return base::Error::from_errno("failed socket creation");
 
   return UnixSocket(fd, path);
@@ -76,21 +75,5 @@ base::ErrorOr<UnixSocket> UnixSocket::accept()
     return base::Error::from_errno("failed to accept connection");
 
   return UnixSocket(client_fd, m_path);
-}
-
-bool UnixSocket::try_send(const SynthMessage &message) noexcept
-{
-  ssize_t bytes_sent =
-      send(m_socket_fd, &message, sizeof(message), MSG_NOSIGNAL);
-
-  return bytes_sent == sizeof(message);
-}
-
-bool UnixSocket::try_recv(SynthMessage &message) noexcept
-{
-  ssize_t bytes_received =
-      recv(m_socket_fd, &message, sizeof(message), MSG_DONTWAIT);
-
-  return bytes_received == sizeof(message);
 }
 } // namespace ipc

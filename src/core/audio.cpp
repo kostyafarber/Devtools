@@ -1,8 +1,9 @@
 #include "audio.h"
 #include "base/error.h"
+#include "ipc/command_server.h"
 #include "ipc/constants.h"
-#include "ipc/messages/synth_message.h"
-#include "ipc/socket_server.h"
+#include "ipc/synth_message.h"
+#include "logging.h"
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreAudioTypes/CoreAudioTypes.h>
 #include <MacTypes.h>
@@ -85,16 +86,16 @@ base::ErrorOr<void> AudioProcess::initialise()
   }
 
   LOG_AUDIO(Info, "setting up socket server");
-  auto maybe_socket_server =
-      ipc::SocketServer::create(ipc::constants::socket_path, m_command_buffer);
-  if (maybe_socket_server.is_error()) {
+  auto maybe_command_server =
+      ipc::CommandServer::create(ipc::constants::socket_path, m_command_buffer);
+  if (maybe_command_server.is_error()) {
     LOG_AUDIO(Error, "error setting up socket server: {}",
-              maybe_socket_server.error().message());
-    return maybe_socket_server.error();
+              maybe_command_server.error().message());
+    return maybe_command_server.error();
   }
 
-  m_socket_server = std::move(maybe_socket_server.value());
-  m_socket_server->start();
+  m_command_server = std::move(maybe_command_server.value());
+  m_command_server->start();
 
   LOG_AUDIO(Info, "starting command thread");
   m_listening_for_commands.store(true, std::memory_order_release);
@@ -155,7 +156,7 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     break;
 
   case ipc::SynthCommand::DecreaseVolume:
-    LOG_AUDIO(Info, "decreeing volume by: {:2f}", message.data.volume);
+    LOG_AUDIO(Info, "decreasing volume by: {:2f}", message.data.volume);
     m_synth->decrease_volume(message.data.volume);
     break;
 
@@ -180,6 +181,7 @@ void AudioProcess::process_command(const ipc::SynthMessage &message) noexcept
     break;
 
   default:
+    LOG_AUDIO(Warn, "unknown command");
     break;
   }
 }
