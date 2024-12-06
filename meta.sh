@@ -42,7 +42,7 @@ cmake -G Ninja \
     -DBUILD_IPC=${build_ipc} \
     -DENABLE_TESTING=${tests} \
     -DENABLE_INTEGRATION_TESTING=${integration} \
-    .. --fresh
+    .. 
 
 ninja
 
@@ -58,5 +58,9 @@ if [ "$tests" = "ON" ] && [ "$1" = "test" ]; then
         GTEST_COLOR=1 ctest --output-on-failure --verbose
     fi
 fi
+
+if [ "$1" = "run" ]; then
+    open ./SynthUI.app
+fi;
 
 cd ..        

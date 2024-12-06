@@ -77,6 +77,8 @@ xcode-select --install
 
 1. Clone the repository:
 
+<<<<<<< Updated upstream
+
 ```bash
 git clone https://github.com/yourusername/audio-synthesizer.git
 cd audio-synthesizer
@@ -91,6 +93,7 @@ cd audio-synthesizer
 ### Build Options
 
 The build system supports several flags:
+
 - `--debug-audio`: Enable audio debugging
 - `--no-audio`: Disable audio component build
 - `--no-ipc`: Disable IPC component build
@@ -118,7 +121,6 @@ Run specific tests:
 ./meta.sh test integration # Run integration tests
 ./meta.sh test audio # Run audio-related tests
 ```
-
 
 ## Project Structure
 
