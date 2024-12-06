@@ -77,8 +77,6 @@ xcode-select --install
 
 1. Clone the repository:
 
-<<<<<<< Updated upstream
-
 ```bash
 git clone https://github.com/yourusername/audio-synthesizer.git
 cd audio-synthesizer
